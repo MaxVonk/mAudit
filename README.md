@@ -1,5 +1,7 @@
 # mAudit — Microsoft 365 Security Posture Auditor (CSPM)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 **mAudit** is a production-grade, automated Microsoft 365 security posture assessment platform. It inspects an organization's Microsoft Entra ID and M365 tenant using read-only permissions via OAuth2 Admin Consent, analyzes configurations against CIS benchmarks, maps gaps to **NIS2 (Directive (EU) 2022/2555 Art. 21)** and **GDPR (Art. 32)**, and delivers an actionable, shareable web report.
 
 ---
@@ -159,5 +161,7 @@ mAudit/
 ---
 
 ## 🛡️ License
-
-Private & Confidential. Built for automated Microsoft 365 cloud security auditing.
+ 
+This project is open source and distributed under the [MIT License](LICENSE).
+ 
+Copyright (c) 2026 Max Krabbenhöft (MaxVonk).
