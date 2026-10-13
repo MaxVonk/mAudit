@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
-import { ShieldCheck, CheckCircle2, Loader2, Circle } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, Loader2, Circle, AlertTriangle, Key } from 'lucide-react';
 
 interface ScanStep {
   id: string;
@@ -26,9 +26,9 @@ function ScanView() {
   const [steps, setSteps] = useState<ScanStep[]>(INITIAL_STEPS);
   const [progress, setProgress] = useState(15);
   const [reportToken, setReportToken] = useState<string | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Generate or fetch report
     let active = true;
 
     async function triggerScan() {
@@ -45,7 +45,10 @@ function ScanView() {
             setReportToken(liveData.token);
             return;
           }
-          console.warn('Live scan returnerade fel, använder demofallback:', liveData.error);
+          if (liveData.error && active) {
+            setScanError(liveData.error);
+            return;
+          }
         }
 
         const res = await fetch('/api/scan/demo', {
@@ -57,8 +60,11 @@ function ScanView() {
         if (data.token && active) {
           setReportToken(data.token);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Scan error:', err);
+        if (active) {
+          setScanError(err.message || 'Ett oväntat fel uppstod vid skanningen.');
+        }
       }
     }
 
@@ -79,7 +85,7 @@ function ScanView() {
       active = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [searchParams]);
 
   // Update step status based on progress percentage
   useEffect(() => {
@@ -109,41 +115,98 @@ function ScanView() {
       <Navbar />
 
       <main className="flex-1 flex items-center justify-center py-16 px-4">
-        <div className="w-full max-w-xl rounded-2xl border border-border bg-surface p-8 shadow-2xl text-center">
-          {/* Progress Ring / Gauge */}
-          <div className="relative mx-auto mb-8 flex h-36 w-36 items-center justify-center">
-            <svg className="h-full w-full transform -rotate-90">
-              <circle
-                cx="72"
-                cy="72"
-                r="60"
-                stroke="#1F2937"
-                strokeWidth="8"
-                fill="transparent"
-              />
-              <circle
-                cx="72"
-                cy="72"
-                r="60"
-                stroke="#06B6D4"
-                strokeWidth="8"
-                fill="transparent"
-                strokeDasharray={377}
-                strokeDashoffset={377 - (progress / 100) * 377}
-                strokeLinecap="round"
-                className="transition-all duration-300 ease-out"
-              />
-            </svg>
-            <div className="absolute flex flex-col items-center justify-center">
-              <span className="text-3xl font-extrabold text-white">{progress}%</span>
-              <span className="text-[10px] uppercase font-semibold text-text-muted">Skannar</span>
+        {scanError ? (
+          <div className="w-full max-w-xl rounded-2xl border border-rose-500/30 bg-surface p-8 shadow-2xl text-left">
+            <div className="flex items-center gap-3 text-rose-400 mb-4">
+              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">Microsoft Graph Autentiseringsfel</h2>
+                <p className="text-xs text-text-secondary">Kunde inte hämta access token för den anslutna tenanten</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-slate-950 p-4 border border-rose-500/20 font-mono text-xs text-rose-300 break-words mb-5">
+              {scanError}
+            </div>
+
+            <div className="p-4 rounded-xl bg-surface-subtle border border-border text-xs text-text-secondary space-y-2 mb-6">
+              <div className="flex items-center gap-2 font-semibold text-white">
+                <Key className="w-4 h-4 text-brand-accent" />
+                <span>Hur du åtgärdar detta:</span>
+              </div>
+              <p>
+                Felet <strong className="text-white">AADSTS7000215 (Invalid client secret)</strong> beror oftast på att:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-text-muted pl-1">
+                <li>Värdet som kopierades från Azure Portal var <strong className="text-white">Secret ID</strong> istället för <strong className="text-white">Value</strong>.</li>
+                <li>Ett tecken råkade falla bort under kopieringen (t.ex. sista tecknet).</li>
+              </ul>
+              <p className="pt-1 text-slate-300">
+                👉 Gå till <em>Entra ID &gt; App registrations &gt; mAudit &gt; Certificates &amp; secrets</em>, klicka på <strong>+ New client secret</strong>, klicka på <strong>kopieringsikonen</strong> i kolumnen <strong>Value</strong> och klistra in i din <code className="text-brand-accent font-mono">.env</code>. Starta sedan om servern.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2.5 rounded-xl bg-brand-primary text-xs font-semibold text-white hover:bg-brand-hover transition-colors"
+              >
+                Försök igen
+              </button>
+              <button
+                onClick={async () => {
+                  const res = await fetch('/api/scan/demo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ profile: 'vulnerable_sme' }),
+                  });
+                  const data = await res.json();
+                  if (data.token) router.push(`/report/${data.token}`);
+                }}
+                className="px-4 py-2.5 rounded-xl border border-border bg-surface-subtle text-xs font-semibold text-text-secondary hover:text-white transition-colors"
+              >
+                Fortsätt med demodata istället
+              </button>
             </div>
           </div>
+        ) : (
+          <div className="w-full max-w-xl rounded-2xl border border-border bg-surface p-8 shadow-2xl text-center">
+            {/* Progress Ring / Gauge */}
+            <div className="relative mx-auto mb-8 flex h-36 w-36 items-center justify-center">
+              <svg className="h-full w-full transform -rotate-90">
+                <circle
+                  cx="72"
+                  cy="72"
+                  r="60"
+                  stroke="#1F2937"
+                  strokeWidth="8"
+                  fill="transparent"
+                />
+                <circle
+                  cx="72"
+                  cy="72"
+                  r="60"
+                  stroke="#06B6D4"
+                  strokeWidth="8"
+                  fill="transparent"
+                  strokeDasharray={377}
+                  strokeDashoffset={377 - (progress / 100) * 377}
+                  strokeLinecap="round"
+                  className="transition-all duration-300 ease-out"
+                />
+              </svg>
+              <div className="absolute flex flex-col items-center justify-center">
+                <span className="text-3xl font-extrabold text-white">{progress}%</span>
+                <span className="text-[10px] uppercase font-semibold text-text-muted">Skannar</span>
+              </div>
+            </div>
 
-          <h2 className="text-xl font-bold text-white mb-2">Besiktning pågår...</h2>
-          <p className="text-xs text-text-secondary mb-8">
-            Vi hämtar säkerhetskonfigurationer och analyserar era M365-inställningar i realtid.
-          </p>
+            <h2 className="text-xl font-bold text-white mb-2">Besiktning pågår...</h2>
+            <p className="text-xs text-text-secondary mb-8">
+              Vi hämtar säkerhetskonfigurationer och analyserar era M365-inställningar i realtid.
+            </p>
 
           {/* Sequential Step Log */}
           <div className="space-y-3 text-left">
@@ -172,6 +235,7 @@ function ScanView() {
             ))}
           </div>
         </div>
+        )}
       </main>
     </div>
   );
