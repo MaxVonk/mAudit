@@ -23,6 +23,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
 .env*.local
 dev.db
 dev.db-journal
@@ -30,3 +31,4 @@ dev.db-journal
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
