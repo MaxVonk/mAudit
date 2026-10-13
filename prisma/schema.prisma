@@ -1,0 +1,22 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model ScanReport {
+  id            String   @id @default(uuid())
+  tenantIdHash  String   // SHA-256 of Azure Tenant ID (never raw tenant ID)
+  companyName   String
+  score         Int      // Overall score 0-100
+  categoryScores String  // JSON string: Record<Category, { score: number; max: number; earned: number; percentage: number }>
+  findings      String   // JSON string: AuditFinding[] (strictly anonymized, no PII/emails)
+  summaryStats  String   // JSON string: { totalUsers: number; mfaPercent: number; adminCount: number; verifiedDomains: string[] }
+  createdAt     DateTime @default(now())
+  expiresAt     DateTime // Defaults to createdAt + 14 days
+  isPublicToken String   @unique // Cryptographic URL token (e.g. 64-char hex)
+}
+

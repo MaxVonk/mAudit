@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0B0F19;
+  --surface: #111827;
+  --surface-subtle: #1F2937;
+  --border: #374151;
+  --brand-primary: #2563EB;
+  --brand-accent: #06B6D4;
+}
+
+body {
+  background-color: #0B0F19;
+  color: #F9FAFB;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0B0F19;
+}
+::-webkit-scrollbar-thumb {
+  background: #1F2937;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #374151;
+}
+
+/* Print styles for clean PDF export per spec */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-page-break {
+    page-break-before: always;
+  }
+  .bg-surface {
+    background-color: #f9fafb !important;
+    border-color: #e5e7eb !important;
+  }
+  .text-white, .text-text-primary {
+    color: #111827 !important;
+  }
+  .text-text-secondary {
+    color: #4b5563 !important;
+  }
+  .border-border {
+    border-color: #e5e7eb !important;
+  }
+}
+
