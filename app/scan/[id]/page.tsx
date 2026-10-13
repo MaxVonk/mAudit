@@ -5,24 +5,28 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { ShieldCheck, CheckCircle2, Loader2, Circle, AlertTriangle, Key } from 'lucide-react';
 
+import { useLanguage } from '@/lib/i18n';
+
 interface ScanStep {
   id: string;
-  label: string;
+  labelEn: string;
+  labelSv: string;
   status: 'pending' | 'in_progress' | 'completed';
 }
 
 const INITIAL_STEPS: ScanStep[] = [
-  { id: '1', label: 'Ansluter till Microsoft Graph och verifierar tenant-licenser...', status: 'in_progress' },
-  { id: '2', label: 'Slår upp SPF, DKIM och DMARC mot publika DNS-servrar...', status: 'pending' },
-  { id: '3', label: 'Granskar Globala Administratörer och MFA-efterlevnad...', status: 'pending' },
-  { id: '4', label: 'Kontrollerar Conditional Access och blockering av legacy auth...', status: 'pending' },
-  { id: '5', label: 'Beräknar CIS- och NIS2-efterlevnad samt slutför rapport...', status: 'pending' },
+  { id: '1', labelEn: 'Connecting to Microsoft Graph and inspecting tenant licenses...', labelSv: 'Ansluter till Microsoft Graph och verifierar tenant-licenser...', status: 'in_progress' },
+  { id: '2', labelEn: 'Querying SPF, DKIM, and DMARC against public DNS servers...', labelSv: 'Slår upp SPF, DKIM och DMARC mot publika DNS-servrar...', status: 'pending' },
+  { id: '3', labelEn: 'Auditing Global Administrators and MFA registration metrics...', labelSv: 'Granskar Globala Administratörer och MFA-efterlevnad...', status: 'pending' },
+  { id: '4', labelEn: 'Evaluating Conditional Access policies and legacy auth blocking...', labelSv: 'Kontrollerar Conditional Access och blockering av legacy auth...', status: 'pending' },
+  { id: '5', labelEn: 'Calculating CIS & NIS2 compliance and compiling final report...', labelSv: 'Beräknar CIS- och NIS2-efterlevnad samt slutför rapport...', status: 'pending' },
 ];
 
 function ScanView() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
+  const { language, t } = useLanguage();
   const [steps, setSteps] = useState<ScanStep[]>(INITIAL_STEPS);
   const [progress, setProgress] = useState(15);
   const [reportToken, setReportToken] = useState<string | null>(null);
@@ -199,13 +203,13 @@ function ScanView() {
               </svg>
               <div className="absolute flex flex-col items-center justify-center">
                 <span className="text-3xl font-extrabold text-white">{progress}%</span>
-                <span className="text-[10px] uppercase font-semibold text-text-muted">Skannar</span>
+                <span className="text-[10px] uppercase font-semibold text-text-muted">{t('scan.scanning')}</span>
               </div>
             </div>
 
-            <h2 className="text-xl font-bold text-white mb-2">Besiktning pågår...</h2>
+            <h2 className="text-xl font-bold text-white mb-2">{t('scan.progress')}</h2>
             <p className="text-xs text-text-secondary mb-8">
-              Vi hämtar säkerhetskonfigurationer och analyserar era M365-inställningar i realtid.
+              {t('scan.subtitle')}
             </p>
 
           {/* Sequential Step Log */}
@@ -230,7 +234,7 @@ function ScanView() {
                 {step.status === 'pending' && (
                   <Circle className="h-4 w-4 text-slate-600 shrink-0" />
                 )}
-                <span>{step.label}</span>
+                <span>{language === 'en' ? step.labelEn : step.labelSv}</span>
               </div>
             ))}
           </div>

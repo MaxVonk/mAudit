@@ -16,15 +16,33 @@ import {
   FileCheck,
 } from 'lucide-react';
 import { AuditFinding } from '@/lib/types';
+import { useLanguage } from '@/lib/i18n';
 
 interface FindingCardProps {
   finding: AuditFinding;
   defaultExpanded?: boolean;
 }
 
+const ENGLISH_TITLES: Record<string, string> = {
+  'CHK-ID-01': 'Global MFA Coverage for Standard Users',
+  'CHK-ID-02': 'Security Defaults Enforcement',
+  'CHK-ID-03': 'Self-Service Password Reset (SSPR)',
+  'CHK-ADM-01': 'Number of Global Administrators',
+  'CHK-ADM-02': 'Administrators Without Phishing-Resistant MFA',
+  'CHK-ADM-03': 'Dedicated Admin Accounts (Mailbox & Productivity License Check)',
+  'CHK-CA-01': 'Blocking Legacy Authentication (POP3/IMAP/SMTP)',
+  'CHK-CA-02': 'Break-Glass Emergency Access Account Exclusion',
+  'CHK-DNS-01': 'SPF Record Validity',
+  'CHK-DNS-02': 'DMARC Enforcement & Anti-Spoofing Policy',
+  'CHK-DNS-03': 'DKIM Signing Configuration',
+  'CHK-SHR-01': 'Anonymous External Link Sharing in SharePoint & OneDrive',
+  'CHK-APP-01': 'User Consent for Third-Party Applications (OAuth Consent)',
+};
+
 export function FindingCard({ finding, defaultExpanded = false }: FindingCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [copied, setCopied] = useState(false);
+  const { language } = useLanguage();
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -43,14 +61,14 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
     if (status === 'PASS') {
       return (
         <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-          Godkänd
+          {language === 'en' ? 'Passed' : 'Godkänd'}
         </span>
       );
     }
     if (status === 'NOT_APPLICABLE') {
       return (
         <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
-          Licens krävs
+          {language === 'en' ? 'License Required' : 'Licens krävs'}
         </span>
       );
     }
@@ -58,25 +76,25 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
       case 'CRITICAL':
         return (
           <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20">
-            Kritisk
+            {language === 'en' ? 'Critical' : 'Kritisk'}
           </span>
         );
       case 'HIGH':
         return (
           <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
-            Hög prioritet
+            {language === 'en' ? 'High Priority' : 'Hög prioritet'}
           </span>
         );
       case 'MEDIUM':
         return (
           <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
-            Medel
+            {language === 'en' ? 'Medium' : 'Medel'}
           </span>
         );
       default:
         return (
           <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
-            Låg
+            {language === 'en' ? 'Low' : 'Låg'}
           </span>
         );
     }
@@ -92,6 +110,10 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
       console.error('Kunde inte kopiera:', err);
     }
   };
+
+  // Base ID lookup without domain suffix (e.g., CHK-DNS-01-domain.com -> CHK-DNS-01)
+  const baseId = finding.id.substring(0, 10);
+  const title = (language === 'en' && ENGLISH_TITLES[baseId]) || (language === 'en' && ENGLISH_TITLES[finding.id]) || finding.title;
 
   return (
     <div
@@ -109,7 +131,7 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <span className="font-semibold text-white text-sm sm:text-base tracking-tight truncate">
-                {finding.title}
+                {title}
               </span>
               {getSeverityBadge(finding.severity, finding.status)}
             </div>
@@ -134,7 +156,7 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
 
         <div className="flex items-center gap-3 shrink-0">
           <span className="hidden sm:inline-block text-xs text-text-muted">
-            Vikt: {finding.weight}p
+            {language === 'en' ? `Weight: ${finding.weight} pts` : `Vikt: ${finding.weight}p`}
           </span>
           {isExpanded ? (
             <ChevronUp className="h-5 w-5 text-text-muted" />
@@ -151,7 +173,7 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
           {finding.remediation.description && (
             <div>
               <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">
-                Varför detta är en risk
+                {language === 'en' ? 'Why this is a risk' : 'Varför detta är en risk'}
               </h4>
               <p className="text-text-secondary leading-relaxed">{finding.remediation.description}</p>
             </div>
@@ -160,7 +182,9 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
           {/* Current vs Recommended */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             <div className="p-3.5 rounded-lg bg-surface border border-border">
-              <span className="text-xs font-semibold text-text-muted block mb-1">Nuvarande värde</span>
+              <span className="text-xs font-semibold text-text-muted block mb-1">
+                {language === 'en' ? 'Current value' : 'Nuvarande värde'}
+              </span>
               <span
                 className={`font-mono text-xs ${
                   finding.status === 'PASS'
@@ -175,7 +199,9 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
             </div>
 
             <div className="p-3.5 rounded-lg bg-surface border border-border">
-              <span className="text-xs font-semibold text-text-muted block mb-1">Rekommenderat läge</span>
+              <span className="text-xs font-semibold text-text-muted block mb-1">
+                {language === 'en' ? 'Recommended setting' : 'Rekommenderat läge'}
+              </span>
               <span className="font-mono text-xs text-emerald-400">{finding.recommendedValue}</span>
             </div>
           </div>
@@ -185,7 +211,7 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
             <div className="rounded-lg bg-surface p-4 border border-border">
               <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-white">
                 <ExternalLink className="h-4 w-4 text-brand-accent" />
-                <span>Åtgärda via Microsoft 365 Admin Center</span>
+                <span>{language === 'en' ? 'Remediate in Microsoft 365 Admin Center' : 'Åtgärda via Microsoft 365 Admin Center'}</span>
               </div>
               <div className="text-xs font-mono text-text-secondary bg-surface-subtle/60 p-2.5 rounded border border-border/50 break-words">
                 {finding.remediation.adminCenterPath}
@@ -199,7 +225,7 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2 text-xs font-semibold text-slate-200">
                   <Terminal className="h-4 w-4 text-emerald-400" />
-                  <span>Åtgärda via PowerShell</span>
+                  <span>{language === 'en' ? 'Remediate via PowerShell' : 'Åtgärda via PowerShell'}</span>
                 </div>
                 <button
                   onClick={copyToClipboard}
@@ -208,12 +234,12 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
                   {copied ? (
                     <>
                       <Check className="h-3.5 w-3.5 text-emerald-400" />
-                      <span className="text-emerald-400">Kopierat!</span>
+                      <span className="text-emerald-400">{language === 'en' ? 'Copied!' : 'Kopierat!'}</span>
                     </>
                   ) : (
                     <>
                       <Copy className="h-3.5 w-3.5" />
-                      <span>Kopiera</span>
+                      <span>{language === 'en' ? 'Copy' : 'Kopiera'}</span>
                     </>
                   )}
                 </button>
@@ -229,13 +255,17 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
             <div className="flex flex-wrap gap-4 text-xs text-text-muted pt-2 border-t border-border/50">
               {finding.compliance.nis2Article && (
                 <div>
-                  <span className="font-semibold text-blue-400">NIS2-koppling: </span>
+                  <span className="font-semibold text-blue-400">
+                    {language === 'en' ? 'NIS2 Mapping: ' : 'NIS2-koppling: '}
+                  </span>
                   <span>{finding.compliance.nis2Article}</span>
                 </div>
               )}
               {finding.compliance.gdprArticle && (
                 <div>
-                  <span className="font-semibold text-cyan-400">GDPR-koppling: </span>
+                  <span className="font-semibold text-cyan-400">
+                    {language === 'en' ? 'GDPR Mapping: ' : 'GDPR-koppling: '}
+                  </span>
                   <span>{finding.compliance.gdprArticle}</span>
                 </div>
               )}
@@ -246,4 +276,3 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
     </div>
   );
 }
-

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
+import { useLanguage } from '@/lib/i18n';
 import {
   ShieldCheck,
   KeyRound,
@@ -21,14 +22,8 @@ import {
 
 export default function HomePage() {
   const router = useRouter();
-  const [companyName, setCompanyName] = useState('');
+  const { t } = useLanguage();
   const [loadingDemo, setLoadingDemo] = useState(false);
-
-  const handleStartConnect = (e: React.FormEvent) => {
-    e.preventDefault();
-    const query = companyName ? `?company=${encodeURIComponent(companyName)}` : '';
-    router.push(`/connect${query}`);
-  };
 
   const handleRunDemo = async (profile: 'vulnerable_sme' | 'remediated_sme') => {
     setLoadingDemo(true);
@@ -63,19 +58,18 @@ export default function HomePage() {
             {/* Top pill badge */}
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-subtle/80 px-4 py-1.5 text-xs font-semibold text-text-primary mb-6 shadow-sm">
               <span className="flex h-2 w-2 rounded-full bg-brand-accent animate-pulse" />
-              <span>Automatiserad M365-analys enligt NIS2 & CIS Benchmark</span>
+              <span>{t('hero.badge')}</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white mb-6 max-w-4xl mx-auto leading-tight">
-              Besiktiga er Microsoft 365-miljö{' '}
+              {t('hero.title1')}{' '}
               <span className="bg-gradient-to-r from-brand-primary via-cyan-400 to-brand-accent bg-clip-text text-transparent">
-                på 60 sekunder
+                {t('hero.title2')}
               </span>
             </h1>
 
             <p className="text-lg md:text-xl text-text-secondary max-w-2xl mx-auto mb-10 leading-relaxed">
-              Få en oberoende hälsokontroll av er molnsäkerhet. Inga lösenord delas, inga inställningar ändras, och ni
-              tar enkelt bort behörigheten direkt efteråt.
+              {t('hero.subtitle')}
             </p>
 
             {/* Main Action Card: 1-Click Onboarding */}
@@ -91,7 +85,7 @@ export default function HomePage() {
                     <path fill="#05a6f0" d="M1 12h10v10H1z"/>
                     <path fill="#ffba08" d="M12 12h10v10H12z"/>
                   </svg>
-                  <span>Anslut med Microsoft 365 (1 klick)</span>
+                  <span>{t('hero.cta')}</span>
                   <ArrowRight className="w-5 h-5 ml-1" />
                 </a>
 
@@ -100,7 +94,7 @@ export default function HomePage() {
                     href="/connect"
                     className="hover:text-white transition-colors underline underline-offset-4 decoration-border"
                   >
-                    Hur fungerar behörigheterna? Läs mer →
+                    {t('hero.howItWorks')}
                   </a>
                   <button
                     onClick={() => handleRunDemo('vulnerable_sme')}
@@ -108,7 +102,7 @@ export default function HomePage() {
                     className="font-semibold text-brand-accent hover:text-cyan-300 inline-flex items-center gap-1.5 transition-colors"
                   >
                     <PlayCircle className="w-3.5 h-3.5" />
-                    {loadingDemo ? 'Laddar demo...' : 'Testa demodata'}
+                    {loadingDemo ? t('nav.loadingDemo') : t('hero.demoPrompt')}
                   </button>
                 </div>
               </div>
@@ -121,8 +115,8 @@ export default function HomePage() {
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-semibold text-white">Endast läsrättigheter</h4>
-                  <p className="text-[11px] text-text-muted">Officiella .Read Graph API</p>
+                  <h4 className="text-xs font-semibold text-white">{t('badge.readOnly.title')}</h4>
+                  <p className="text-[11px] text-text-muted">{t('badge.readOnly.desc')}</p>
                 </div>
               </div>
 
@@ -131,8 +125,8 @@ export default function HomePage() {
                   <KeyRound className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-semibold text-white">Noll lösenordsåtkomst</h4>
-                  <p className="text-[11px] text-text-muted">Kan inte läsa mejl eller filer</p>
+                  <h4 className="text-xs font-semibold text-white">{t('badge.noPassword.title')}</h4>
+                  <p className="text-[11px] text-text-muted">{t('badge.noPassword.desc')}</p>
                 </div>
               </div>
 
@@ -141,8 +135,8 @@ export default function HomePage() {
                   <Trash2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-semibold text-white">14 dagars lagring</h4>
-                  <p className="text-[11px] text-text-muted">Eller radera med 1 klick nu</p>
+                  <h4 className="text-xs font-semibold text-white">{t('badge.retention.title')}</h4>
+                  <p className="text-[11px] text-text-muted">{t('badge.retention.desc')}</p>
                 </div>
               </div>
             </div>
@@ -154,10 +148,10 @@ export default function HomePage() {
           <div className="container mx-auto max-w-6xl px-4 sm:px-6">
             <div className="text-center mb-12">
               <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-3">
-                Vad mAudit kontrollerar i er miljö
+                {t('cat.title')}
               </h2>
               <p className="text-text-secondary text-sm sm:text-base max-w-xl mx-auto">
-                15 djupgående säkerhetskontroller kartlägger sårbarheter och ger konkreta åtgärder med PowerShell.
+                {t('cat.subtitle')}
               </p>
             </div>
 
@@ -167,11 +161,11 @@ export default function HomePage() {
                 <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400 w-fit mb-4">
                   <Users className="w-6 h-6" />
                 </div>
-                <h3 className="font-semibold text-white text-lg mb-2">1. Identitet & MFA</h3>
+                <h3 className="font-semibold text-white text-lg mb-2">{t('cat.1.title')}</h3>
                 <p className="text-text-secondary text-sm leading-relaxed mb-3">
-                  Kartlägger multifaktortäckning bland alla aktiva användare, verifierar Security Defaults och säkerställer SSPR-rutiner.
+                  {t('cat.1.desc')}
                 </p>
-                <span className="text-[11px] font-mono text-brand-accent">Vikt: 35% av hälsopoängen</span>
+                <span className="text-[11px] font-mono text-brand-accent">35% {t('cat.weight')}</span>
               </div>
 
               {/* Category 2 */}
@@ -179,11 +173,11 @@ export default function HomePage() {
                 <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400 w-fit mb-4">
                   <ShieldAlert className="w-6 h-6" />
                 </div>
-                <h3 className="font-semibold text-white text-lg mb-2">2. Globala Administratörer</h3>
+                <h3 className="font-semibold text-white text-lg mb-2">{t('cat.2.title')}</h3>
                 <p className="text-text-secondary text-sm leading-relaxed mb-3">
-                  Hittar behörighetsläckor, säkerställer 2–4 dedikerade adminkonton och flaggar administratörer utan stark MFA eller med e-postpostlådor.
+                  {t('cat.2.desc')}
                 </p>
-                <span className="text-[11px] font-mono text-brand-accent">Vikt: 25% av hälsopoängen</span>
+                <span className="text-[11px] font-mono text-brand-accent">25% {t('cat.weight')}</span>
               </div>
 
               {/* Category 3 */}
@@ -191,11 +185,11 @@ export default function HomePage() {
                 <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 w-fit mb-4">
                   <Sliders className="w-6 h-6" />
                 </div>
-                <h3 className="font-semibold text-white text-lg mb-2">3. Villkorsstyrd Åtkomst</h3>
+                <h3 className="font-semibold text-white text-lg mb-2">{t('cat.3.title')}</h3>
                 <p className="text-text-secondary text-sm leading-relaxed mb-3">
-                  Granskar blockering av äldre autentisering (Legacy Auth/POP3/IMAP) och verifierar nödåtkomstkonton (Break-Glass).
+                  {t('cat.3.desc')}
                 </p>
-                <span className="text-[11px] font-mono text-brand-accent">Vikt: 15% av hälsopoängen</span>
+                <span className="text-[11px] font-mono text-brand-accent">15% {t('cat.weight')}</span>
               </div>
 
               {/* Category 4 */}
@@ -203,11 +197,11 @@ export default function HomePage() {
                 <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400 w-fit mb-4">
                   <Mail className="w-6 h-6" />
                 </div>
-                <h3 className="font-semibold text-white text-lg mb-2">4. E-posthygien & DNS</h3>
+                <h3 className="font-semibold text-white text-lg mb-2">{t('cat.4.title')}</h3>
                 <p className="text-text-secondary text-sm leading-relaxed mb-3">
-                  Djupkontroll av offentliga DNS-servrar: Validerar SPF med HardFail, DMARC-policy mot spoofing och DKIM-signering i Exchange.
+                  {t('cat.4.desc')}
                 </p>
-                <span className="text-[11px] font-mono text-brand-accent">Vikt: 15% av hälsopoängen</span>
+                <span className="text-[11px] font-mono text-brand-accent">15% {t('cat.weight')}</span>
               </div>
 
               {/* Category 5 */}
@@ -215,11 +209,11 @@ export default function HomePage() {
                 <div className="p-3 rounded-xl bg-purple-500/10 text-purple-400 w-fit mb-4">
                   <Share2 className="w-6 h-6" />
                 </div>
-                <h3 className="font-semibold text-white text-lg mb-2">5. Fildelning & Samarbete</h3>
+                <h3 className="font-semibold text-white text-lg mb-2">{t('cat.5.title')}</h3>
                 <p className="text-text-secondary text-sm leading-relaxed mb-3">
-                  Granskar anonym extern fildelning i SharePoint och OneDrive för att stoppa oavsiktliga dataläckor till obehöriga.
+                  {t('cat.5.desc')}
                 </p>
-                <span className="text-[11px] font-mono text-brand-accent">Vikt: 5% av hälsopoängen</span>
+                <span className="text-[11px] font-mono text-brand-accent">5% {t('cat.weight')}</span>
               </div>
 
               {/* Category 6 */}
@@ -227,11 +221,11 @@ export default function HomePage() {
                 <div className="p-3 rounded-xl bg-rose-500/10 text-rose-400 w-fit mb-4">
                   <Layers className="w-6 h-6" />
                 </div>
-                <h3 className="font-semibold text-white text-lg mb-2">6. Applikationer & Behörigheter</h3>
+                <h3 className="font-semibold text-white text-lg mb-2">{t('cat.6.title')}</h3>
                 <p className="text-text-secondary text-sm leading-relaxed mb-3">
-                  Förhindrar slutanvändare från att godkänna riskfyllda tredjepartsappar och tvingar fram Admin Consent Workflow.
+                  {t('cat.6.desc')}
                 </p>
-                <span className="text-[11px] font-mono text-brand-accent">Vikt: 5% av hälsopoängen</span>
+                <span className="text-[11px] font-mono text-brand-accent">5% {t('cat.weight')}</span>
               </div>
             </div>
           </div>
@@ -245,29 +239,27 @@ export default function HomePage() {
                 <div className="max-w-xl">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-semibold text-brand-accent mb-4">
                     <FileCheck2 className="w-3.5 h-3.5" />
-                    EU-cybersäkerhetskrav
+                    {t('compliance.badge')}
                   </div>
                   <h3 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-4">
-                    Rapporteringsunderlag för NIS2 och GDPR
+                    {t('compliance.title')}
                   </h3>
                   <p className="text-text-secondary text-sm sm:text-base leading-relaxed mb-6">
-                    NIS2-direktivet (Artikel 21) och GDPR (Artikel 32) kräver att ledning och IT dokumenterar
-                    kontinuerliga tekniska åtgärder för autentisering, e-postsäkerhet och behörighetsstyrning. mAudit
-                    mappar varje teknisk inställning direkt till respektive lagkrav.
+                    {t('compliance.desc')}
                   </p>
                   <button
                     onClick={() => handleRunDemo('vulnerable_sme')}
                     className="inline-flex items-center gap-2 rounded-xl bg-surface-subtle border border-border px-4 py-2.5 text-sm font-semibold text-white hover:bg-surface hover:border-brand-accent/40 transition-colors"
                   >
                     <Sparkles className="w-4 h-4 text-brand-accent" />
-                    Se exempelrapport med lagrum
+                    {t('compliance.button')}
                   </button>
                 </div>
 
                 <div className="p-6 rounded-2xl bg-surface-subtle/80 border border-border/80 w-full md:w-80 shrink-0 text-center">
                   <div className="text-4xl font-extrabold text-white mb-1">100%</div>
                   <p className="text-xs text-text-muted mb-4 uppercase tracking-wider font-semibold">
-                    Automatiserad besiktning
+                    {t('compliance.auto')}
                   </p>
                   <div className="space-y-2 text-xs text-text-secondary text-left">
                     <div className="flex items-center gap-2">
@@ -276,11 +268,11 @@ export default function HomePage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-status-pass shrink-0" />
-                      <span>NIS2 Direktiv Art. 21</span>
+                      <span>NIS2 Directive Art. 21</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-status-pass shrink-0" />
-                      <span>GDPR Art. 32 Säkerhet</span>
+                      <span>GDPR Art. 32 Security</span>
                     </div>
                   </div>
                 </div>
@@ -298,11 +290,10 @@ export default function HomePage() {
             <span>— Microsoft 365 Cloud Security Posture Management</span>
           </div>
           <div>
-            <span>Data raderas automatiskt efter 14 dagar • Zero-Retention arkitektur</span>
+            <span>14-day zero-retention privacy architecture</span>
           </div>
         </div>
       </footer>
     </div>
   );
 }
-

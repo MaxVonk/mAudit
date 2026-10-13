@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { LanguageProvider } from '@/lib/i18n';
 
 export const metadata: Metadata = {
-  title: 'mAudit — M365 Säkerhetsbesiktning & NIS2-analys',
-  description: 'Automatiserad hälsokontroll av er Microsoft 365 och Entra ID-miljö enligt CIS Benchmarks och NIS2. 100% skrivskyddad, noll lösenordsåtkomst.',
+  title: 'mAudit — M365 Cloud Security Posture Auditor',
+  description: 'Automated security posture assessment of Microsoft 365 and Entra ID environments aligned with CIS Benchmarks, NIS2, and GDPR. 100% read-only, zero password access.',
 };
 
 export default function RootLayout({
@@ -12,13 +13,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="sv" className="dark">
+    <html lang="en" className="dark">
       <body className="bg-background text-text-primary antialiased selection:bg-brand-primary/30 selection:text-white">
-        <div className="flex min-h-screen flex-col">
-          {children}
-        </div>
+        <LanguageProvider>
+          <div className="flex min-h-screen flex-col">
+            {children}
+          </div>
+        </LanguageProvider>
       </body>
     </html>
   );
 }
-

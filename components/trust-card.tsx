@@ -1,38 +1,57 @@
 'use client';
 
-import { ShieldCheck, Lock, Eye, Trash2, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Lock, Eye, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/lib/i18n';
 
 const PERMISSIONS_LIST = [
   {
     name: 'Directory.Read.All',
-    scope: 'Kataloginformation',
-    description: 'Läser organisationsmetadata, antal aktiva användare och licensmodeller för att anpassa säkerhetskraven.',
+    scopeEn: 'Directory Information',
+    scopeSv: 'Kataloginformation',
+    descEn: 'Reads tenant metadata, user counts, and licensing models to calibrate security benchmarks.',
+    descSv: 'Läser organisationsmetadata, antal aktiva användare och licensmodeller för att anpassa säkerhetskraven.',
   },
   {
     name: 'Organization.Read.All',
-    scope: 'Organisation & Domäner',
-    description: 'Identifierar anslutna domäner (t.ex. ertforetag.se) för att slå upp SPF-, DKIM- och DMARC-poster.',
+    scopeEn: 'Organization & Domains',
+    scopeSv: 'Organisation & Domäner',
+    descEn: 'Identifies verified custom domains to perform public SPF, DKIM, and DMARC DNS lookups.',
+    descSv: 'Identifierar anslutna domäner (t.ex. ertforetag.se) för att slå upp SPF-, DKIM- och DMARC-poster.',
   },
   {
     name: 'Policy.Read.All',
-    scope: 'Säkerhetspolicyer',
-    description: 'Granskar om Security Defaults, Conditional Access och moderna lösenordskrav är aktiverade.',
+    scopeEn: 'Security Policies',
+    scopeSv: 'Säkerhetspolicyer',
+    descEn: 'Evaluates Security Defaults, Conditional Access, and modern password authorization policies.',
+    descSv: 'Granskar om Security Defaults, Conditional Access och moderna lösenordskrav är aktiverade.',
   },
   {
     name: 'Reports.Read.All',
-    scope: 'MFA & Registreringsgrad',
-    description: 'Hämtar aggregerad statistik över hur stor andel av personalen som har aktiverat multifaktorautentisering.',
+    scopeEn: 'MFA & Authentication Methods',
+    scopeSv: 'MFA & Registreringsgrad',
+    descEn: 'Retrieves aggregated statistics on employee MFA registration percentages.',
+    descSv: 'Hämtar aggregerad statistik över hur stor andel av personalen som har aktiverat multifaktorautentisering.',
   },
   {
     name: 'RoleManagement.Read.Directory',
-    scope: 'Administratörsroller',
-    description: 'Räknar antalet Globala Administratörer och kontrollerar att de har MFA och dedikerade konton.',
+    scopeEn: 'Administrator Roles',
+    scopeSv: 'Administratörsroller',
+    descEn: 'Counts Global Administrators and checks for dedicated accounts and MFA compliance.',
+    descSv: 'Räknar antalet Globala Administratörer och kontrollerar att de har MFA och dedikerade konton.',
+  },
+  {
+    name: 'AuditLog.Read.All',
+    scopeEn: 'Audit & MFA Reports',
+    scopeSv: 'Granskningsloggar & MFA',
+    descEn: 'Allows programmatic read-only access to authentication registration details via Graph API.',
+    descSv: 'Tillåter automatiserad läsning av registreringsstatus för autentiseringsmetoder via Graph API.',
   },
 ];
 
 export function TrustCard() {
   const [showDetails, setShowDetails] = useState(false);
+  const { language, t } = useLanguage();
 
   return (
     <div className="rounded-2xl border border-border bg-surface/90 p-6 md:p-8 backdrop-blur shadow-xl">
@@ -41,8 +60,8 @@ export function TrustCard() {
           <ShieldCheck className="w-7 h-7 text-brand-accent" />
         </div>
         <div>
-          <h3 className="text-xl font-bold text-white tracking-tight">100% skrivskyddad säkerhetsanalys</h3>
-          <p className="text-sm text-text-secondary">Inga ändringar eller åtkomst till känsligt företagsinnehåll</p>
+          <h3 className="text-xl font-bold text-white tracking-tight">{t('trust.title')}</h3>
+          <p className="text-sm text-text-secondary">{t('trust.subtitle')}</p>
         </div>
       </div>
 
@@ -50,24 +69,24 @@ export function TrustCard() {
         <li className="flex items-start gap-3 bg-surface-subtle/40 p-3.5 rounded-xl border border-border/50">
           <Eye className="w-5 h-5 text-status-pass mt-0.5 shrink-0" />
           <div>
-            <strong className="text-white block mb-0.5">Enbart läsrättigheter (.Read):</strong>
-            <span>mAudit begär uteslutande officiella Microsoft Graph läsbehörigheter. Appen saknar helt behörighet att ändra, spara eller konfigurera om er miljö.</span>
+            <strong className="text-white block mb-0.5">{t('trust.point1.title')}</strong>
+            <span>{t('trust.point1.desc')}</span>
           </div>
         </li>
 
         <li className="flex items-start gap-3 bg-surface-subtle/40 p-3.5 rounded-xl border border-border/50">
           <Lock className="w-5 h-5 text-status-pass mt-0.5 shrink-0" />
           <div>
-            <strong className="text-white block mb-0.5">Noll åtkomst till innehåll eller lösenord:</strong>
-            <span>Vi kan varken läsa anställdas inkorgar, Teams-meddelanden, OneDrive-dokument eller lösenord. Ingen persondatakopia sparas.</span>
+            <strong className="text-white block mb-0.5">{t('trust.point2.title')}</strong>
+            <span>{t('trust.point2.desc')}</span>
           </div>
         </li>
 
         <li className="flex items-start gap-3 bg-surface-subtle/40 p-3.5 rounded-xl border border-border/50">
           <Trash2 className="w-5 h-5 text-brand-accent mt-0.5 shrink-0" />
           <div>
-            <strong className="text-white block mb-0.5">Enkel avregistrering (10 sekunder):</strong>
-            <span>Du kan omedelbart radera appen efter avslutad besiktning under <em>Microsoft Entra Admin Center &gt; Företagsappar &gt; mAudit &gt; Egenskaper &gt; Ta bort</em>.</span>
+            <strong className="text-white block mb-0.5">{t('trust.point3.title')}</strong>
+            <span>{t('trust.point3.desc')}</span>
           </div>
         </li>
       </ul>
@@ -78,7 +97,7 @@ export function TrustCard() {
           onClick={() => setShowDetails(!showDetails)}
           className="flex items-center justify-between w-full text-xs font-semibold text-text-muted hover:text-white transition-colors"
         >
-          <span>De 5 behörigheter som begärs i Microsofts inloggningsruta</span>
+          <span>{t('trust.drilldown')}</span>
           {showDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
 
@@ -88,9 +107,13 @@ export function TrustCard() {
               <div key={perm.name} className="p-3 rounded-lg bg-surface-subtle/70 border border-border/60 text-xs">
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-mono text-brand-accent font-semibold">{perm.name}</span>
-                  <span className="text-[11px] px-2 py-0.5 rounded bg-surface text-text-muted">{perm.scope}</span>
+                  <span className="text-[11px] px-2 py-0.5 rounded bg-surface text-text-muted">
+                    {language === 'en' ? perm.scopeEn : perm.scopeSv}
+                  </span>
                 </div>
-                <p className="text-text-secondary">{perm.description}</p>
+                <p className="text-text-secondary">
+                  {language === 'en' ? perm.descEn : perm.descSv}
+                </p>
               </div>
             ))}
           </div>
@@ -99,4 +122,3 @@ export function TrustCard() {
     </div>
   );
 }
-

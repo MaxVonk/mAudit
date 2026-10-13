@@ -6,27 +6,36 @@ import { Navbar } from '@/components/navbar';
 import { ScoreGauge } from '@/components/score-gauge';
 import { DiffBadge } from '@/components/diff-badge';
 import { FindingCard } from '@/components/finding-card';
+import { useLanguage } from '@/lib/i18n';
 import {
   Download,
   Share2,
   Trash2,
   AlertTriangle,
-  CheckCircle2,
   Users,
   Shield,
-  Mail,
   FileCheck,
   RefreshCw,
   Check,
   Building,
   Calendar,
 } from 'lucide-react';
-import { StoredScanReport, AuditFinding, FindingCategory } from '@/lib/types';
+import { StoredScanReport, AuditFinding } from '@/lib/types';
+
+const CATEGORY_NAMES_EN: Record<string, string> = {
+  IDENTITY: 'Identity & MFA',
+  ADMIN: 'Global Administrators',
+  CONDITIONAL_ACCESS: 'Conditional Access',
+  EMAIL_DNS: 'Email & Domain Security (DNS)',
+  SHARING: 'File Sharing & Collaboration',
+  APP_GOVERNANCE: 'Application Governance',
+};
 
 export default function ReportPage({ params }: { params: Promise<{ token: string }> }) {
   const resolvedParams = use(params);
   const token = resolvedParams.token;
   const router = useRouter();
+  const { language, t } = useLanguage();
 
   const [report, setReport] = useState<StoredScanReport | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,7 +54,7 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
         const res = await fetch(`/api/report/${token}`);
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || 'Rapporten kunde inte laddas.');
+          throw new Error(errData.error || (language === 'en' ? 'Report could not be loaded.' : 'Rapporten kunde inte laddas.'));
         }
         const data = await res.json();
         setReport(data);
@@ -56,7 +65,7 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
       }
     }
     fetchReport();
-  }, [token]);
+  }, [token, language]);
 
   const handleShare = async () => {
     try {
@@ -112,7 +121,9 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
         <main className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-text-secondary">Laddar besiktningsrapport...</p>
+            <p className="text-sm text-text-secondary">
+              {language === 'en' ? 'Loading assessment report...' : 'Laddar besiktningsrapport...'}
+            </p>
           </div>
         </main>
       </div>
@@ -126,13 +137,15 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
         <main className="flex-1 flex items-center justify-center p-4">
           <div className="max-w-md w-full p-6 rounded-2xl border border-rose-500/30 bg-surface text-center">
             <AlertTriangle className="w-10 h-10 text-rose-500 mx-auto mb-3" />
-            <h2 className="text-lg font-bold text-white mb-2">Rapporten är inte tillgänglig</h2>
-            <p className="text-xs text-text-secondary mb-6">{error || 'Rapporten har tagits bort eller upphört att gälla.'}</p>
+            <h2 className="text-lg font-bold text-white mb-2">
+              {language === 'en' ? 'Report not available' : 'Rapporten är inte tillgänglig'}
+            </h2>
+            <p className="text-xs text-text-secondary mb-6">{error || (language === 'en' ? 'Report was deleted or has expired.' : 'Rapporten har tagits bort eller upphört att gälla.')}</p>
             <button
               onClick={() => router.push('/')}
               className="px-4 py-2 rounded-xl bg-brand-primary text-sm font-semibold text-white hover:bg-brand-hover transition-colors"
             >
-              Tillbaka till startsidan
+              {language === 'en' ? 'Return to Home' : 'Tillbaka till startsidan'}
             </button>
           </div>
         </main>
@@ -158,7 +171,7 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
   const passCount = findings.filter((f) => f.status === 'PASS').length;
   const naCount = findings.filter((f) => f.status === 'NOT_APPLICABLE').length;
 
-  const dateStr = new Date(report.createdAt).toLocaleDateString('sv-SE', {
+  const dateStr = new Date(report.createdAt).toLocaleDateString(language === 'en' ? 'en-US' : 'sv-SE', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -183,14 +196,14 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
             <div>
               <div className="flex items-center gap-2 text-xs font-semibold text-brand-accent mb-1.5">
                 <Building className="w-4 h-4" />
-                <span>M365 Cloud Security Posture Report</span>
+                <span>{t('report.header')}</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                 {report.companyName}
               </h1>
               <div className="flex items-center gap-2 mt-1 text-xs text-text-muted">
                 <Calendar className="w-3.5 h-3.5" />
-                <span>Besiktigad {dateStr}</span>
+                <span>{t('report.auditedOn')} {dateStr}</span>
                 <span>•</span>
                 <span className="font-mono text-[11px]">ID: {report.tenantIdHash.substring(0, 12)}...</span>
               </div>
@@ -202,10 +215,10 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
                 onClick={handleRunRemediatedScan}
                 disabled={remediating}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-brand-accent/40 bg-brand-accent/10 px-3 py-2 text-xs font-semibold text-cyan-300 hover:bg-brand-accent/20 transition-colors"
-                title="Simulera en ny skanning efter åtgärder för att se diff"
+                title="Simulate re-scan after remediations to see diffing"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${remediating ? 'animate-spin' : ''}`} />
-                <span>{remediating ? 'Analyserar...' : 'Simulera om-skanning (Diff)'}</span>
+                <span>{remediating ? 'Analyzing...' : t('report.diffBtn')}</span>
               </button>
 
               <button
@@ -213,7 +226,7 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
                 className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-medium text-white hover:bg-surface-subtle transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Ladda ner PDF</span>
+                <span>{t('report.pdfBtn')}</span>
               </button>
 
               <button
@@ -221,7 +234,7 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
                 className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-medium text-white hover:bg-surface-subtle transition-colors"
               >
                 {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
-                <span>{copiedLink ? 'Länk kopierad!' : 'Dela länk'}</span>
+                <span>{copiedLink ? t('report.sharedCopied') : t('report.shareBtn')}</span>
               </button>
 
               <button
@@ -229,7 +242,7 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
                 className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-400 hover:bg-rose-500/20 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Radera data</span>
+                <span>{t('report.deleteBtn')}</span>
               </button>
             </div>
           </div>
@@ -241,7 +254,7 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
             </div>
           )}
 
-          {/* EXECUTIVE SCORE CARD & 3 KPIs */}
+          {/* EXECUTIVE SCORE CARD & 4 KPIs */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10">
             {/* Score Gauge */}
             <div className="lg:col-span-4 flex">
@@ -255,7 +268,7 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
               {/* KPI 1: MFA */}
               <div className="p-5 rounded-2xl border border-border bg-surface/90 flex flex-col justify-between">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">MFA-täckning</span>
+                  <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">{t('report.kpi.mfa')}</span>
                   <Users className="w-4 h-4 text-blue-400" />
                 </div>
                 <div>
@@ -263,7 +276,7 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
                     {report.summaryStats.mfaPercent}%
                   </div>
                   <p className="text-xs text-text-secondary">
-                    {report.summaryStats.mfaRegisteredUsers} av {report.summaryStats.totalUsers} aktiva användare
+                    {report.summaryStats.mfaRegisteredUsers} {language === 'en' ? 'of' : 'av'} {report.summaryStats.totalUsers} {t('report.kpi.mfaDesc')}
                   </p>
                 </div>
                 <div className="w-full bg-surface-subtle h-2 rounded-full mt-3 overflow-hidden">
@@ -279,20 +292,20 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
               {/* KPI 2: Global Admins */}
               <div className="p-5 rounded-2xl border border-border bg-surface/90 flex flex-col justify-between">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Globala Administratörer</span>
+                  <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">{t('report.kpi.admins')}</span>
                   <Shield className="w-4 h-4 text-amber-400" />
                 </div>
                 <div>
                   <div className="text-3xl font-extrabold text-white mb-1">
-                    {report.summaryStats.adminCount} st
+                    {report.summaryStats.adminCount} {language === 'en' ? 'accounts' : 'st'}
                   </div>
                   <p className="text-xs text-text-secondary">
-                    Rekommenderat antal är 2–4 dedikerade konton
+                    {t('report.kpi.adminsDesc')}
                   </p>
                 </div>
                 <div className="mt-3">
                   <span className="text-[11px] font-medium text-text-muted">
-                    MFA bland administratörer: {report.summaryStats.adminMfaPercent}%
+                    {language === 'en' ? 'Admin MFA Compliance:' : 'MFA bland administratörer:'} {report.summaryStats.adminMfaPercent}%
                   </span>
                 </div>
               </div>
@@ -300,15 +313,15 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
               {/* KPI 3: NIS2 Compliance */}
               <div className="p-5 rounded-2xl border border-border bg-surface/90 flex flex-col justify-between">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">NIS2 Direktiv (Art. 21)</span>
+                  <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">{t('report.kpi.nis2')}</span>
                   <FileCheck className="w-4 h-4 text-brand-accent" />
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-white mb-1">
-                    {nis2Pass} av {nis2Findings.length} kontroller
+                    {nis2Pass} {language === 'en' ? 'of' : 'av'} {nis2Findings.length} {language === 'en' ? 'controls met' : 'kontroller'}
                   </div>
                   <p className="text-xs text-text-secondary">
-                    Teknisk efterlevnad av cyberhygien & MFA
+                    {t('report.kpi.nis2Desc')}
                   </p>
                 </div>
                 <div className="w-full bg-surface-subtle h-2 rounded-full mt-3 overflow-hidden">
@@ -322,15 +335,15 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
               {/* KPI 4: GDPR Compliance */}
               <div className="p-5 rounded-2xl border border-border bg-surface/90 flex flex-col justify-between">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">GDPR Säkerhet (Art. 32)</span>
+                  <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">{t('report.kpi.gdpr')}</span>
                   <FileCheck className="w-4 h-4 text-emerald-400" />
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-white mb-1">
-                    {gdprPass} av {gdprFindings.length} kontroller
+                    {gdprPass} {language === 'en' ? 'of' : 'av'} {gdprFindings.length} {language === 'en' ? 'controls met' : 'kontroller'}
                   </div>
                   <p className="text-xs text-text-secondary">
-                    Skydd mot obehörig åtkomst och dataläckor
+                    {t('report.kpi.gdprDesc')}
                   </p>
                 </div>
                 <div className="w-full bg-surface-subtle h-2 rounded-full mt-3 overflow-hidden">
@@ -345,12 +358,14 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
 
           {/* CATEGORIES OVERVIEW */}
           <div className="mb-10 rounded-2xl border border-border bg-surface/80 p-6">
-            <h3 className="text-base font-bold text-white mb-4">Besiktningsområden & Poängfördelning</h3>
+            <h3 className="text-base font-bold text-white mb-4">{t('report.catBreakdown')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {Object.entries(report.categoryScores).map(([catKey, cat]) => (
                 <div key={catKey} className="p-4 rounded-xl bg-surface-subtle/50 border border-border/60">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-white">{cat.name}</span>
+                    <span className="text-xs font-semibold text-white">
+                      {language === 'en' ? (CATEGORY_NAMES_EN[catKey] || cat.name) : cat.name}
+                    </span>
                     <span className="text-xs font-mono font-bold text-brand-accent">{cat.percentage}%</span>
                   </div>
                   <div className="w-full bg-surface h-2 rounded-full overflow-hidden mb-2">
@@ -362,8 +377,8 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
                     />
                   </div>
                   <div className="flex items-center justify-between text-[11px] text-text-muted">
-                    <span>{cat.findingsCount.pass} godkända</span>
-                    <span>{cat.findingsCount.fail} brister</span>
+                    <span>{cat.findingsCount.pass} {language === 'en' ? 'passed' : 'godkända'}</span>
+                    <span>{cat.findingsCount.fail} {language === 'en' ? 'failed' : 'brister'}</span>
                   </div>
                 </div>
               ))}
@@ -374,9 +389,9 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
               <div>
-                <h3 className="text-xl font-bold text-white tracking-tight">Detaljerade säkerhetskontroller</h3>
+                <h3 className="text-xl font-bold text-white tracking-tight">{t('report.findingsTitle')}</h3>
                 <p className="text-xs text-text-secondary">
-                  Klicka på ett kort för att se pedagogisk förklaring, klickväg och PowerShell-kommando.
+                  {t('report.findingsSubtitle')}
                 </p>
               </div>
 
@@ -390,7 +405,7 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
                       : 'bg-surface text-text-secondary hover:text-white border border-border'
                   }`}
                 >
-                  Alla ({findings.length})
+                  {t('filter.all')} ({findings.length})
                 </button>
                 {criticalCount > 0 && (
                   <button
@@ -401,7 +416,7 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
                         : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20'
                     }`}
                   >
-                    Kritiska ({criticalCount})
+                    {t('filter.critical')} ({criticalCount})
                   </button>
                 )}
                 <button
@@ -412,7 +427,7 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
                       : 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20'
                   }`}
                 >
-                  Varningar ({warningCount})
+                  {t('filter.warnings')} ({warningCount})
                 </button>
                 <button
                   onClick={() => setActiveFilter('PASS')}
@@ -422,7 +437,7 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
                       : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20'
                   }`}
                 >
-                  Godkända ({passCount})
+                  {t('filter.passed')} ({passCount})
                 </button>
                 {naCount > 0 && (
                   <button
@@ -433,7 +448,7 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
                         : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
                     }`}
                   >
-                    Licens krävs ({naCount})
+                    {t('filter.na')} ({naCount})
                   </button>
                 )}
               </div>
@@ -443,7 +458,7 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
             <div className="space-y-3.5">
               {filteredFindings.length === 0 ? (
                 <div className="p-8 text-center rounded-2xl border border-border bg-surface text-text-muted text-sm">
-                  Inga kontroller matchade det valda filtret.
+                  {language === 'en' ? 'No findings matched the selected filter.' : 'Inga kontroller matchade det valda filtret.'}
                 </div>
               ) : (
                 filteredFindings.map((finding) => (
@@ -465,11 +480,10 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
           <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl">
             <div className="flex items-center gap-3 text-rose-500 mb-4">
               <AlertTriangle className="w-6 h-6" />
-              <h3 className="text-lg font-bold text-white">Radera besiktningsrapport omedelbart?</h3>
+              <h3 className="text-lg font-bold text-white">{t('report.deleteModal.title')}</h3>
             </div>
             <p className="text-xs text-text-secondary mb-6 leading-relaxed">
-              Detta raderar rapporten och all aggregerad statistik permanent från databasen. Den offentliga länken
-              slutar omedelbart att fungera. Denna åtgärd kan inte ångras.
+              {t('report.deleteModal.desc')}
             </p>
             <div className="flex justify-end gap-3">
               <button
@@ -477,14 +491,14 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
                 disabled={deleting}
                 className="px-4 py-2 rounded-xl border border-border bg-surface-subtle text-xs font-semibold text-text-primary hover:bg-surface transition-colors"
               >
-                Avbryt
+                {t('report.deleteModal.cancel')}
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleting}
                 className="px-4 py-2 rounded-xl bg-rose-500 text-xs font-semibold text-white hover:bg-rose-600 transition-colors shadow-lg shadow-rose-500/25"
               >
-                {deleting ? 'Raderar...' : 'Ja, radera all data nu'}
+                {deleting ? 'Deleting...' : t('report.deleteModal.confirm')}
               </button>
             </div>
           </div>
@@ -493,4 +507,3 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
     </div>
   );
 }
-

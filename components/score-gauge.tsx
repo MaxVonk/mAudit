@@ -1,11 +1,15 @@
 'use client';
 
+import { useLanguage } from '@/lib/i18n';
+
 interface ScoreGaugeProps {
   score: number;
   size?: number;
 }
 
 export function ScoreGauge({ score, size = 180 }: ScoreGaugeProps) {
+  const { language } = useLanguage();
+
   const getStatus = (s: number) => {
     // Canonical score bands per auditor spec & SKILL.md (90 / 70)
     if (s >= 90) {
@@ -13,7 +17,7 @@ export function ScoreGauge({ score, size = 180 }: ScoreGaugeProps) {
         color: 'text-emerald-400',
         stroke: '#10B981',
         badgeClass: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10',
-        label: 'Utmärkt säkerhetsläge',
+        label: language === 'en' ? 'Excellent Security Posture' : 'Utmärkt säkerhetsläge',
       };
     }
     if (s >= 70) {
@@ -21,14 +25,14 @@ export function ScoreGauge({ score, size = 180 }: ScoreGaugeProps) {
         color: 'text-amber-400',
         stroke: '#F59E0B',
         badgeClass: 'text-amber-400 border-amber-500/30 bg-amber-500/10',
-        label: 'Godtagbart med åtgärdsbehov',
+        label: language === 'en' ? 'Acceptable with Action Needed' : 'Godtagbart med åtgärdsbehov',
       };
     }
     return {
       color: 'text-rose-400',
       stroke: '#EF4444',
       badgeClass: 'text-rose-400 border-rose-500/30 bg-rose-500/10',
-      label: 'Kritiska sårbarheter identifierade',
+      label: language === 'en' ? 'Critical Vulnerabilities Detected' : 'Kritiska sårbarheter identifierade',
     };
   };
 
@@ -72,7 +76,7 @@ export function ScoreGauge({ score, size = 180 }: ScoreGaugeProps) {
             <span className="text-xl text-text-muted font-medium ml-1">/100</span>
           </div>
           <span className="text-[11px] uppercase tracking-wider text-text-muted font-semibold mt-1">
-            Hälsopoäng
+            {language === 'en' ? 'Health Score' : 'Hälsopoäng'}
           </span>
         </div>
       </div>
@@ -83,4 +87,3 @@ export function ScoreGauge({ score, size = 180 }: ScoreGaugeProps) {
     </div>
   );
 }
-
