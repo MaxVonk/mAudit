@@ -78,36 +78,39 @@ export default function HomePage() {
               tar enkelt bort behörigheten direkt efteråt.
             </p>
 
-            {/* Main Action Card */}
-            <div className="max-w-xl mx-auto p-4 sm:p-5 rounded-2xl border border-border bg-surface/90 backdrop-blur shadow-2xl mb-8">
-              <form onSubmit={handleStartConnect} className="flex flex-col sm:flex-row gap-3">
-                <input
-                  type="text"
-                  placeholder="Företagsnamn eller domän (valfritt)"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  className="flex-1 rounded-xl border border-border bg-surface-subtle px-4 py-3 text-sm text-white placeholder-text-muted focus:border-brand-accent focus:outline-none focus:ring-1 focus:ring-brand-accent"
-                />
-                <button
-                  type="submit"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-primary/25 hover:bg-brand-hover transition-all"
+            {/* Main Action Card: 1-Click Onboarding */}
+            <div className="max-w-xl mx-auto p-5 sm:p-6 rounded-2xl border border-border bg-surface/90 backdrop-blur shadow-2xl mb-8">
+              <div className="space-y-3">
+                <a
+                  href="/api/auth/consent"
+                  className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-brand-primary px-6 py-4 text-base font-semibold text-white shadow-xl shadow-brand-primary/25 hover:bg-brand-hover hover:scale-[1.01] transition-all"
                 >
-                  <span>Starta besiktning</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </form>
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 23 23">
+                    <path fill="#f35325" d="M1 1h10v10H1z"/>
+                    <path fill="#81bc06" d="M12 1h10v10H12z"/>
+                    <path fill="#05a6f0" d="M1 12h10v10H1z"/>
+                    <path fill="#ffba08" d="M12 12h10v10H12z"/>
+                  </svg>
+                  <span>Anslut med Microsoft 365 (1 klick)</span>
+                  <ArrowRight className="w-5 h-5 ml-1" />
+                </a>
 
-              {/* Demo button */}
-              <div className="mt-3.5 pt-3.5 border-t border-border/60 flex items-center justify-between text-xs text-text-muted px-1">
-                <span>Vill du testa utan Microsoft-inloggning?</span>
-                <button
-                  onClick={() => handleRunDemo('vulnerable_sme')}
-                  disabled={loadingDemo}
-                  className="font-semibold text-brand-accent hover:text-cyan-300 inline-flex items-center gap-1.5 transition-colors"
-                >
-                  <PlayCircle className="w-3.5 h-3.5" />
-                  {loadingDemo ? 'Laddar demorapport...' : 'Kör med demodata →'}
-                </button>
+                <div className="flex items-center justify-between text-xs text-text-muted px-1 pt-1">
+                  <a
+                    href="/connect"
+                    className="hover:text-white transition-colors underline underline-offset-4 decoration-border"
+                  >
+                    Hur fungerar behörigheterna? Läs mer →
+                  </a>
+                  <button
+                    onClick={() => handleRunDemo('vulnerable_sme')}
+                    disabled={loadingDemo}
+                    className="font-semibold text-brand-accent hover:text-cyan-300 inline-flex items-center gap-1.5 transition-colors"
+                  >
+                    <PlayCircle className="w-3.5 h-3.5" />
+                    {loadingDemo ? 'Laddar demo...' : 'Testa demodata'}
+                  </button>
+                </div>
               </div>
             </div>
 
