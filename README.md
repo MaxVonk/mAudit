@@ -24,6 +24,9 @@
 6. **Nordic Minimalist Dark UX:**
    - Built with Next.js 15 App Router, React 19, and Tailwind CSS.
    - Dedicated **Pre-Consent Trust Screen** explaining permissions, zero-content access, and 10-second Enterprise App offboarding.
+7. **Bilingual Support (English & Swedish):**
+   - Full application localization for both English and Swedish.
+   - Instant language switcher (`🇬🇧 EN` / `🇸🇪 SV`) in the navigation bar with `localStorage` preference persistence.
 
 ---
 
@@ -72,10 +75,10 @@ npm run build
 ## 🎮 Instant Demo Mode
 
 You can test and evaluate the entire end-to-end application **without needing an active Microsoft Azure tenant**:
-- Click **"Testa med demodata"** (Run with Demo Data) on the homepage or navigation bar.
-- Generates a complete report for a sample organization (*Nordic Retail AB*).
-- Click **"Simulera om-skanning (Diff)"** inside the report to see scan diffing in action with positive score deltas and resolved vulnerabilities.
-- Click **"Radera data"** to test the one-click database purge.
+- Click **"Try with demo data"** (`"Testa med demodata"`) on the homepage or navigation bar.
+- Generates a complete security evaluation report for a sample organization (*Nordic Retail AB*).
+- Click **"Simulate Rescan (Diff)"** (`"Simulera om-skanning (Diff)"`) inside the report to see scan diffing in action with positive score deltas and resolved vulnerabilities.
+- Click **"Delete Data"** (`"Radera data"`) to test the one-click permanent database purge.
 
 ---
 
@@ -146,6 +149,7 @@ mAudit/
 │   ├── types.ts                   # Domain models & TypeScript interfaces
 │   ├── scoring.ts                 # Health index calculation (90/70 bands)
 │   ├── diff.ts                    # Scan comparison engine
+│   ├── i18n.tsx                   # English & Swedish localization context & dictionary
 │   └── scanner/
 │       ├── capabilities.ts        # Tenant SKU & license capability detector
 │       ├── graph-client.ts        # Graph client & safe query 403 runner
