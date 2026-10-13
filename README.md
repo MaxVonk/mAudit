@@ -93,6 +93,7 @@ Add the following Microsoft Graph Application Permissions:
 - `Policy.Read.All` — Inspects Security Defaults, Conditional Access, and authorization policies.
 - `Reports.Read.All` — Reads credential registration details to calculate MFA metrics.
 - `RoleManagement.Read.Directory` — Inspects active Global Administrators and privileged role assignments.
+- `AuditLog.Read.All` — Required by Microsoft Graph to read authentication methods & MFA registration reports.
 
 ### 3. Environment Configuration
 Create a `.env` file in the project root based on `.env.example`:

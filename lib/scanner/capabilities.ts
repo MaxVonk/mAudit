@@ -39,7 +39,20 @@ export async function detectTenantCapabilities(client: Client): Promise<TenantCa
 
     for (const sku of skus) {
       const skuId = sku.skuId?.toLowerCase();
-      capabilities.skuList.push(sku.skuPartNumber || skuId);
+      const skuPart = (sku.skuPartNumber || skuId || '').toUpperCase();
+      capabilities.skuList.push(skuPart);
+
+      if (
+        skuPart.includes('AAD_PREMIUM') ||
+        skuPart.includes('ENTRA_P') ||
+        skuPart.includes('EMS') ||
+        skuPart.includes('BUSINESS_PREMIUM') ||
+        skuPart.includes('SPE_E5') ||
+        skuPart.includes('SPE_E3') ||
+        skuPart.includes('ENTERPRISEPREMIUM')
+      ) {
+        capabilities.hasEntraP1orP2 = true;
+      }
 
       const mapping = SKU_MAPPINGS[skuId];
       if (mapping) {
@@ -53,7 +66,11 @@ export async function detectTenantCapabilities(client: Client): Promise<TenantCa
       if (sku.servicePlans) {
         for (const sp of sku.servicePlans) {
           const spName = sp.servicePlanName?.toUpperCase() || '';
-          if (spName.includes('AAD_PREMIUM') || spName.includes('ENTRA_P')) {
+          if (
+            spName.includes('AAD_PREMIUM') ||
+            spName.includes('ENTRA_P') ||
+            spName.includes('MFA_PREMIUM')
+          ) {
             capabilities.hasEntraP1orP2 = true;
           }
           if (spName.includes('EXCHANGE_S_') || spName.includes('EXCHANGE_ENTERPRISE')) {

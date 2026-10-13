@@ -44,27 +44,20 @@ export async function runLiveTenantAudit(
   let totalUsers = 0;
   let mfaRegisteredUsers = 0;
 
+  // Query users to ensure accurate tenant user count
+  const usersRes = await safeGraphQuery(async () => {
+    return graphClient.api('/users').top(999).select('id,accountEnabled,userPrincipalName').get();
+  });
+  if (usersRes.data?.value) {
+    const activeUsers = usersRes.data.value.filter((u: any) => u.accountEnabled !== false);
+    totalUsers = activeUsers.length || usersRes.data.value.length;
+  }
+
   const mfaReportRes = await safeGraphQuery(async () => {
     return graphClient.api('/reports/authenticationMethods/userRegistrationDetails').top(999).get();
   });
 
-  if (mfaReportRes.licenseMissing) {
-    findings.push({
-      id: 'CHK-ID-01',
-      category: 'IDENTITY',
-      title: 'Global MFA-täckning för användare',
-      severity: 'HIGH',
-      weight: 25,
-      status: 'NOT_APPLICABLE',
-      currentValue: 'Licens saknas för avancerad MFA-rapportering',
-      recommendedValue: 'Minst 95% av alla aktiva användare',
-      compliance: { nis2Article: 'Art 21.2.j', gdprArticle: 'Art 32.1.b' },
-      remediation: {
-        adminCenterPath: 'Microsoft Entra Admin Center > Skydd > Autentiseringsmetoder',
-        powershellSnippet: '# Denna kontroll kräver Entra ID P1/P2 för automatisk rapportläsning.',
-      },
-    });
-  } else if (mfaReportRes.data?.value) {
+  if (mfaReportRes.data?.value) {
     const userRegs = mfaReportRes.data.value;
     totalUsers = userRegs.length;
     mfaRegisteredUsers = userRegs.filter((u: any) => u.isMfaRegistered).length;
@@ -85,6 +78,41 @@ export async function runLiveTenantAudit(
         adminCenterPath: 'Microsoft Entra Admin Center > Skydd > Autentiseringsmetoder > Registreringskampanj',
         powershellSnippet: 'Get-MgUser -All | Where-Object { $_.AccountEnabled }',
         description: 'Multifaktorautentisering förhindrar över 99.2% av alla automatiserade lösenordsattacker.',
+      },
+    });
+  } else if (capabilities.hasEntraP1orP2 || mfaReportRes.permissionMissing) {
+    // Tenant has P1/P2, but Microsoft Graph requires AuditLog.Read.All application permission
+    findings.push({
+      id: 'CHK-ID-01',
+      category: 'IDENTITY',
+      title: 'Global MFA-täckning (AuditLog.Read.All behörighet krävs)',
+      severity: 'HIGH',
+      weight: 25,
+      status: 'WARNING',
+      currentValue: `Er tenant har Entra ID P1/P2, men appen behöver AuditLog.Read.All (${totalUsers > 0 ? totalUsers + ' användare' : 'aktiv organisation'})`,
+      recommendedValue: 'Minst 95% av alla aktiva användare med MFA',
+      compliance: { nis2Article: 'Art 21.2.j', gdprArticle: 'Art 32.1.b' },
+      remediation: {
+        adminCenterPath: 'Microsoft Entra Admin Center > Appregistreringar > mAudit > API-behörigheter > Lägg till AuditLog.Read.All',
+        powershellSnippet: '# Er tenant har Entra ID P1/P2!\n# Lägg till Application Permission "AuditLog.Read.All" under mAudit i Entra ID för att läsa rapporten.',
+        description: 'Er organisation har Entra ID P1/P2. För att Microsoft Graph ska tillåta programmatisk avläsning av registreringsrapporten kräver Microsoft behörigheten AuditLog.Read.All i appregistreringen.',
+      },
+    });
+  } else {
+    // Tenant does NOT have Entra P1/P2
+    findings.push({
+      id: 'CHK-ID-01',
+      category: 'IDENTITY',
+      title: 'Global MFA-täckning för användare',
+      severity: 'HIGH',
+      weight: 25,
+      status: 'NOT_APPLICABLE',
+      currentValue: 'Licens saknas för avancerad MFA-rapportering',
+      recommendedValue: 'Minst 95% av alla aktiva användare',
+      compliance: { nis2Article: 'Art 21.2.j', gdprArticle: 'Art 32.1.b' },
+      remediation: {
+        adminCenterPath: 'Microsoft Entra Admin Center > Skydd > Autentiseringsmetoder',
+        powershellSnippet: '# Denna kontroll kräver Entra ID P1/P2 för automatisk rapportläsning.',
       },
     });
   }
