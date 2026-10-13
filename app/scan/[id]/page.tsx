@@ -32,7 +32,22 @@ function ScanView() {
     let active = true;
 
     async function triggerScan() {
+      const tenant = searchParams.get('tenant');
       try {
+        if (tenant) {
+          const liveRes = await fetch('/api/scan/live', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tenantId: tenant }),
+          });
+          const liveData = await liveRes.json();
+          if (liveData.token && active) {
+            setReportToken(liveData.token);
+            return;
+          }
+          console.warn('Live scan returnerade fel, använder demofallback:', liveData.error);
+        }
+
         const res = await fetch('/api/scan/demo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
