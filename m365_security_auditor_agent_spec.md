@@ -6,7 +6,7 @@ You are an expert full-stack security engineer and cloud architect. Your task is
 
 ## 1. Architectural Vision & Core Differentiators
 
-This tool improves upon existing single-shot scanners (such as Securenix) through four core architectural pillars:
+This tool improves upon existing single-shot scanners, through four core architectural pillars:
 1. **Dynamic License Awareness:** Inspects tenant SKUs (`subscribedSkus`) *before* running checks. It adapts expectations (e.g. evaluating Security Defaults for Business Standard instead of penalizing for lack of Conditional Access, which requires Entra ID P1/P2).
 2. **Actionable Remediation Engine:** Every finding includes both a direct Microsoft 365 Admin Center click-path and a copy-pasteable PowerShell CLI remediation snippet.
 3. **Regulatory Mapping (NIS2 & GDPR):** Links technical gaps directly to NIS2 (Directive (EU) 2022/2555 Art. 21) and GDPR (Art. 32) compliance criteria for executive stakeholders.
