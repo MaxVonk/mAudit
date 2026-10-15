@@ -1,188 +1,195 @@
 # UX/UI & Frontend Specification: mAudit
 
-Denna specifikation definierar designsystem, användarresor, sidlayouter och komponentarkitektur för **mAudit** – en automatiserad säkerhetsbesiktningsplattform för Microsoft 365.
+This specification defines the design system, user journeys, page layouts, and component architecture for **mAudit** — an automated Microsoft 365 security posture management platform (CSPM).
 
 ---
 
-## 1. Varumärkesidentitet & Designfilosofi
+## 1. Brand Identity & Design Philosophy
 
-Säkerhetsverktyg lider ofta av att antingen se för komplexa ut (Enterprise/SIEM-stil) eller att upplevas som opålitliga ("phishing-liknande"). **mAudit** ska förmedla **nordisk minimalism, teknisk precision och absolut transparens**.
+Security tools often suffer from being either overly complex (Enterprise/SIEM-style) or perceived as untrustworthy ("phishing-like"). **mAudit** conveys **Nordic minimalism, technical precision, and absolute transparency**.
 
-### 1.1 Kärnvärden
-- **Extrem transparens:** Inga dolda behörigheter. Kunden ska alltid förstå *varför* en rättighet begärs och hur de raderar appen.
-- **Icke-alarmistisk:** Vi säljer inte genom panik ("DU ÄR HACKAD!"), utan genom lugn fakta och handfasta åtgärder ("Här är 3 enkla justeringar som höjer er säkerhet").
-- **Klick-till-handling:** Varje brist presenteras tillsammans med en direkt klickväg i adminportalen eller ett färdigt PowerShell-kommando.
+### 1.1 Core Values
+- **Extreme Transparency:** No hidden permissions. The customer always understands *why* a permission is requested and how to delete the application.
+- **Non-Alarmist Tone:** We do not market through panic ("YOU ARE HACKED!"), but through calm facts and concrete remediations ("Here are 3 straightforward adjustments to elevate your security posture").
+- **Click-to-Action:** Every finding is presented with both a direct click-path in the Microsoft admin center and a copy-pasteable PowerShell command.
+- **Bilingual By Design:** Complete support for English (`🇬🇧 EN`) and Swedish (`🇸🇪 SV`), with an instant toggle and persistent user preference.
 
-### 1.2 Design Tokens & Färgpalett (Tailwind CSS)
+### 1.2 Design Tokens & Color Palette (Tailwind CSS)
 
 ```css
-/* Primära färger */
---background: #0B0F19;         /* Djup nattblå / slate bakgrund */
---surface: #111827;            /* Kort- och panelbakgrund */
---surface-subtle: #1F2937;     /* Hover-tillstånd, sekundära block */
---border: #374151;             /* Subtila skiljelinjer */
+/* Primary Surface & Background */
+--background: #0B0F19;         /* Deep slate/night-sky background */
+--surface: #111827;            /* Card & panel surface */
+--surface-subtle: #1F2937;     /* Hover states, secondary blocks */
+--border: #374151;             /* Subtle dividing borders */
 
 /* Accent & Brand */
---brand-primary: #2563EB;      /* mAudit Blå (Action/CTA) */
---brand-accent: #06B6D4;       /* Cyan highlight (Glows, accenter) */
+--brand-primary: #2563EB;      /* mAudit Blue (Action / CTA) */
+--brand-accent: #06B6D4;       /* Cyan highlight (Glows, accents) */
 --brand-gradient: linear-gradient(135deg, #2563EB 0%, #06B6D4 100%);
 
-/* Statusfärger (Säkerhetsbetyg) */
---status-pass: #10B981;        /* Grön (90-100 / Godkänd) */
---status-warning: #F59E0B;     /* Amber (70-89 / Varning) */
---status-fail: #EF4444;        /* Röd (<70 / Kritisk brist) */
---status-neutral: #64748B;     /* Skiffergrå (Licens krävs / Info) */
+/* Status Colors (Security Scoring Bands) */
+--status-pass: #10B981;        /* Emerald (90–100 / Passed) */
+--status-warning: #F59E0B;     /* Amber (70–89 / Warning) */
+--status-fail: #EF4444;        /* Rose (<70 / Critical Finding) */
+--status-neutral: #64748B;     /* Slate (License Required / Neutral) */
 
-/* Text */
---text-primary: #F9FAFB;       /* Rubriker och primär text */
---text-secondary: #9CA3AF;     /* Förklarande brödtext */
---text-muted: #6B7280;         /* Metadata, disclaimers */
+/* Typography Colors */
+--text-primary: #F9FAFB;       /* Headings and primary high-contrast text */
+--text-secondary: #9CA3AF;     /* Explanatory body text */
+--text-muted: #6B7280;         /* Metadata, disclaimers, microcopy */
 ```
 
-### 1.3 Typografi & Ikoner
-- **Typsnitt:** `Inter` eller `Geist Sans` för gränssnitt; `JetBrains Mono` eller `Geist Mono` för PowerShell-kommandon, DNS-poster och tekniska värden.
-- **Ikonbibliotek:** `lucide-react` (enhetlig linjetjocklek: `strokeWidth={1.75}`).
+### 1.3 Typography & Icons
+- **Typography:** `Inter` or `Geist Sans` for UI interfaces; `JetBrains Mono` or `Geist Mono` for PowerShell commands, DNS records, and technical values.
+- **Icon Library:** `lucide-react` (uniform stroke width: `strokeWidth={1.75}`).
 
 ---
 
-## 2. Användarresa (User Journey)
+## 2. User Journey
 
 ```
-[1. Startsida (/)] 
+[1. Home Page (/)] 
       │ 
-      ▼ (Klick: "Starta besiktning")
-[2. Förtroende & Pre-Consent (/connect)] 
+      ▼ (Click: "Start Audit" or "Try Demo")
+[2. Trust & Pre-Consent Screen (/connect)] 
       │ 
-      ▼ (Omdirigering till login.microsoftonline.com)
-[3. Microsoft Admin Consent] 
+      ▼ (Redirect to login.microsoftonline.com)
+[3. Microsoft Admin Consent Dialog] 
       │ 
-      ▼ (Callback med token)
-[4. Live Skanningsvy (/scan/[id])] 
+      ▼ (OAuth callback with authorization code)
+[4. Live Scan Progression View (/scan/[id])] 
       │ 
-      ▼ (Färdigställd analys ~45s)
-[5. Interaktiv Besiktningsrapport (/report/[token])]
+      ▼ (Completed analysis ~45s)
+[5. Interactive Posture Report (/report/[token])]
 ```
 
 ---
 
-## 3. Detaljerade Sidlayouter & Komponenter
+## 3. Detailed Page Layouts & Components
 
-### 3.1 Startsida (`/`)
+### 3.1 Home Page (`/`)
 
-#### A. Hero-sektion
-- **Badge:** `[Nyhet] Automatiserad analys enligt NIS2 & CIS Benchmark`
-- **H1:** *"Besiktiga er Microsoft 365-miljö på 60 sekunder"*
-- **Underrubrik:** *"Få en oberoende hälsokontroll av er molnsäkerhet. Inga lösenord delas, inga inställningar ändras, och ni tar enkelt bort behörigheten direkt efteråt."*
-- **Huvud-CTA:**
-  - Inmatningsfält: Företagsnamn eller domän (valfritt för rapportens omslag).
-  - Stor knapp: `Starta gratis säkerhetskoll` (med Microsoft-logotyp och hover-glow).
-- **Trygghetsikoner direkt under CTA:**
-  - `ShieldCheck` Endast läsrättigheter (`*.Read.*`)
-  - `KeyRound` Noll lösenordsåtkomst
-  - `Trash2` Raderas automatiskt efter 14 dagar
+#### A. Hero Section
+- **Badge:** `Automated M365 analysis aligned with NIS2 & CIS Benchmark`
+- **H1:** *"Audit your Microsoft 365 tenant in 60 seconds"*
+- **Subtitle:** *"Get an independent cloud security health check. No passwords shared, no settings changed, and easily remove access right after."*
+- **Primary CTA:**
+  - Connect with Microsoft 365 (1 click) with official Microsoft icon and hover glow.
+  - Quick link to try sample demo data (*Nordic Retail AB*).
+- **Trust Badges Directly Below CTA:**
+  - `ShieldCheck` Strictly read-only access (`*.Read.*`)
+  - `KeyRound` Zero password access (cannot read emails or files)
+  - `Trash2` 14-day automatic retention with 1-click immediate permanent deletion
 
-#### B. Sammanfattning av besiktningsområden
-Ett interaktivt rutnät (2x3 kort) som visar vad mAudit kontrollerar:
-1. **Identitet & MFA:** Kartläggning av multifaktor och legacy auth.
-2. **Globala Administratörer:** Behörighetsläckor och odedikerade adminkonton.
-3. **Villkorsstyrd Åtkomst (Conditional Access):** Efterlevnad av nollförtroendeprinciper.
-4. **E-posthygien & DNS:** Djupkontroll av SPF, DKIM och DMARC.
-5. **Fildelning & Samarbete:** Gästrättigheter i Teams, OneDrive och SharePoint.
-6. **Applikationer & Behörigheter:** Tredjepartsappar och farliga OAuth-godkännanden.
+#### B. Audit Category Overview
+An interactive grid (2x3 cards) showcasing what mAudit evaluates:
+1. **Identity & MFA:** Mapping multi-factor coverage, Security Defaults, and SSPR policies.
+2. **Global Administrators:** Detecting privilege sprawl, unneeded licenses, and missing MFA on admin accounts.
+3. **Conditional Access:** Zero-trust policy enforcement, legacy auth blocking, and break-glass emergency exclusions.
+4. **Email Hygiene & DNS:** Public DNS inspection of SPF HardFail, DMARC policies, and DKIM cryptographic signing.
+5. **File Sharing & Collaboration:** Auditing anonymous external sharing links across SharePoint and OneDrive.
+6. **Application Governance:** Preventing risky user-consented OAuth apps and enforcing Admin Consent Workflows.
 
-#### C. NIS2- & GDPR-puff
-Ett sektionsblock som visar hur mAudit automatiserar rapporteringsunderlag för ledning och IT-ansvariga i ljuset av EU:s cybersäkerhetskrav.
+#### C. Compliance & Legal Section
+A dedicated section detailing how mAudit prepares audit documentation for leadership and compliance officers aligned with EU requirements:
+- **NIS2 Directive (EU 2022/2555 Art. 21):** Technical cybersecurity hygiene, access control, and incident handling.
+- **GDPR (Regulation (EU) 2016/679 Art. 32):** Technical and organizational security of processing.
+- **CIS Microsoft 365 Foundations Benchmark (Level 1 & Level 2):** Industry-standard technical configuration baselines.
+- **SOC 2 Type II (Trust Services Criteria CC6 / CC7):** Logical access and system operations controls.
 
 ---
 
-### 3.2 Förtroende- och Pre-Consent-sida (`/connect`)
+### 3.2 Trust & Pre-Consent Screen (`/connect`)
 
-Detta är **den mest kritiska konverteringssidan**. Här övervinner vi tvekan hos IT-chefen innan de skickas till Microsoft.
+This is **the most critical conversion page**. It eliminates hesitation from IT administrators and security officers before they are redirected to Microsoft login.
 
 #### Layout
-Ett centrerat fönster (max-w-2xl) med en tydlig checklista:
+A centered container (`max-w-2xl`) featuring clear, transparent disclosures:
 
-1. **Rubrik:** *"Hur mAudit ansluter till er organisation"*
-2. **Kortfattad princip:**
-   - **Vad vi gör:** Läser konfigurationer och sammanställer aggregerad statistik.
-   - **Vad vi INTE gör:** Vi kan inte läsa mejl, filer, chattar eller ändra en enda inställning.
-3. **Transparensruta (Klickbar lista):**
-   - Visa de 5 behörigheterna som kommer efterfrågas på Microsofts ruta, översatta till begriplig svenska:
-     - `Directory.Read.All`: Identifiera aktiva adminkonton och grundlicenser.
-     - `Policy.Read.All`: Se om säkerhetspolicyer är påslagna.
-     - `Reports.Read.All`: Se hur många procent av användarna som har MFA aktiverat.
-4. **Avregistreringslöfte (Callout box):**
-   - *"Så tar du bort mAudit efteråt: Gå till portal.azure.com > Företagsappar > mAudit > Ta bort. Det tar 10 sekunder."*
-5. **Godkännandeknapp:** `Fortsätt till Microsofts säkra inloggning →`
-
----
-
-### 3.3 Live Skanningsvy (`/scan/[id]`)
-
-En minimalistisk laddningsvy med live-feedback som gör att väntetiden (30–60 sekunder) känns snabb och professionell.
-
-#### Komponenter
-- **Cirkulär Progress-indikator** (0% -> 100%).
-- **Aktivitetslogg i realtid** (visar vad som körs just nu med subtil fade-in):
-  - `[✓] Verifierar licenser och tenant-förmågor...`
-  - `[✓] Slår upp SPF, DKIM och DMARC mot publika DNS-servrar...`
-  - `[✓] Granskar administratörsroller och MFA-efterlevnad...`
-  - `[●] Kontrollerar Conditional Access och blockering av legacy auth...`
-  - `[ ] Sammanställer besiktningsprotokoll...`
+1. **Title:** *"How mAudit connects to your organization"*
+2. **Core Operational Principles:**
+   - **What we do:** Read security configurations and calculate aggregated statistics.
+   - **What we DO NOT do:** We cannot read emails, files, Teams messages, or passwords, and we cannot alter any settings.
+3. **Transparency Panel (Clickable Permission Breakdown):**
+   - Displays all requested permissions in clear, accessible language:
+     - `Directory.Read.All`: Discover active admin accounts, user counts, and basic licenses.
+     - `Policy.Read.All`: Check whether security policies and Conditional Access rules are enabled.
+     - `Reports.Read.All` / `AuditLog.Read.All`: Evaluate the percentage of users with registered MFA.
+     - `Organization.Read.All`: Discover verified custom domains for external DNS inspection.
+     - `RoleManagement.Read.Directory`: Inspect privileged directory roles.
+4. **10-Second Offboarding Commitment:**
+   - *"How to remove mAudit after the audit: Go to Microsoft Entra Admin Center > Enterprise Applications > mAudit > Properties > Delete. It takes 10 seconds."*
+5. **Consent Button:** `Continue to Microsoft Secure Login →`
 
 ---
 
-### 3.4 Besiktningsrapporten (`/report/[token]`)
+### 3.3 Live Scan Progression View (`/scan/[id]`)
 
-Rapportsidan är verktygets huvudleverans. Den ska vara optimerad för både skärmläsning och utskrift (PDF).
+A minimalist loading view providing real-time feedback that makes the 30–60 second evaluation feel fast, reliable, and professional.
 
-#### A. Rapportens Header
-- Företagsnamn & Skanningsdatum (t.ex. `Acme AB — Besiktigad 24 maj 2026`).
-- **Diff-badge (om tidigare skanning finns):** `+18 poäng sedan senaste skanningen (12 maj)`.
-- Snabbknappar i toppen:
-  - `Ladda ner PDF`
-  - `Dela länk (giltig i 14 dgr)`
-  - `Radera data nu` (Röd diskret text med bekräftelsemodal).
+#### Components
+- **Circular / Radial Progress Bar** (0% -> 100%).
+- **Live Activity Ticker** (displays currently running queries with subtle fade-in):
+  - `[✓] Discovering organization and verified domains...`
+  - `[✓] Querying SPF, DKIM, and DMARC records against public DNS servers...`
+  - `[✓] Auditing Global Administrator accounts and MFA enforcement...`
+  - `[●] Evaluating Conditional Access and legacy protocol blocking...`
+  - `[ ] Calculating health score index and compiling report...`
+
+---
+
+### 3.4 Assessment Report View (`/report/[token]`)
+
+The report page is the core deliverable of the platform. It is fully optimized for screen review, interactive filtering, and print/PDF generation.
+
+#### A. Report Header
+- Company Name & Audit Date (e.g., `Nordic Retail AB — Audited on October 15, 2026`).
+- **Scan Diffing Badge (when a prior scan exists):** `+18 points since previous scan (October 12)`.
+- Action Buttons in Top Bar:
+  - `Simulate re-scan (Diff)` (Tests diffing functionality in demo mode)
+  - `Download PDF` (Prints/exports a clean, multi-page vector PDF)
+  - `Share link` (Copies encrypted public URL valid for 14 days)
+  - `Delete data` (Permanent one-click purge with confirmation modal)
 
 #### B. Executive Score Card
-- **Säkerhetsindex (Gauge Chart):** Stor siffra 0–100.
-  - 90–100: **Utmärkt** (Grön)
-  - 70–89: **Godtagbart med åtgärdsbehov** (Gul/Orange)
-  - 0–69: **Kritiska sårbarheter identifierade** (Röd)
-- **3 snabba nyckeltal (Grid):**
-  - MFA-täckning: `84% av användarna`
-  - Globala administratörer: `5 st (Rekommenderat: 2–4)`
-  - E-postskydd: `DMARC saknas`
-- **Regelefterlevnad:**
-  - `NIS2 Artikel 21:` 3 av 5 kontroller uppfyllda
-  - `GDPR Artikel 32:` 4 av 4 kontroller uppfyllda
+- **Health Score Gauge (Radial SVG):** Prominent score from 0 to 100.
+  - 90–100: **Passed / Excellent Posture** (Emerald)
+  - 70–89: **Warning / Action Needed** (Amber)
+  - 0–69: **Critical Vulnerabilities Identified** (Rose)
+- **Key Operational KPIs:**
+  - MFA Coverage: `e.g. 71% of users (34 of 48 active accounts)`
+  - Global Administrators: `e.g. 5 accounts (Recommended: 2–4)`
+  - Admin MFA Compliance: `e.g. 80% with phishing-resistant MFA`
+- **Security & Compliance Frameworks Dashboard (4 interactive cards):**
+  - **CIS M365 Foundations (Level 1):** Real-time pass/fail ratio and percentage.
+  - **SOC 2 Type II (Common Criteria CC6/CC7):** Access controls and operational monitoring.
+  - **NIS2 Directive (Art. 21):** Technical compliance with cyber hygiene and MFA requirements.
+  - **GDPR Security (Art. 32):** Protection against unauthorized access and data leakage.
+  - *Clicking any framework card instantly filters the findings list below.*
 
-#### C. Åtgärdslista & Kategorier (Filtrerbart gränssnitt)
-Flikar: `Alla (15)`, `Kritiska (2)`, `Varningar (3)`, `Godkända (9)`, `Licens saknas (1)`.
+#### C. Findings List & Remediation Engine
+Interactive status filter buttons: `All (13)`, `Critical`, `Warnings`, `Passed`, `License Required`.
 
-Varje brist visas som ett fällbart dragspelskort (Accordion):
-- **Korthuvud:**
-  - Statusikon (`CheckCircle2` / `AlertTriangle` / `XCircle`)
-  - Titel: t.ex. *"Extern automatisk vidarebefordran är inte blockerad"*
-  - Kategori & Allvarlighetsgrad-badge (`Kritisk`, `Hög`, `Medel`)
-  - Efterlevnads-taggar: `[NIS2 Art 21.2.e]`
-- **Utfällt innehåll:**
-  - **Varför detta är en risk:** Pedagogisk förklaring (2 meningar).
-  - **Nuvarande värde:** `Tillåten för alla användare` (Röd text).
-  - **Rekommenderat läge:** `Blockerad på organisationsnivå` (Grön text).
-  - **Åtgärda via Microsoft 365 Admin Center:**
-    - Steg-för-steg-klickväg: `Exchange Admin Center > E-postflöde > Fjärrdomäner > Redigera standard > Avmarkera 'Tillåt automatisk vidarebefordran'`.
-  - **Åtgärda via PowerShell:**
-    - Kodblock med "Kopiera"-knapp:
-      ```powershell
-      Set-RemoteDomain Default -AutoForwardEnabled $false
-      ```
+Every finding is rendered as an expandable accordion card:
+- **Card Header:**
+  - Status Icon (`CheckCircle2` / `AlertTriangle` / `XCircle` / `HelpCircle`)
+  - Title: e.g. *"Global MFA Coverage for Standard Users"*
+  - Severity Badge (`Critical`, `High Priority`, `Medium`, `Passed`)
+  - Framework Badges: `[CIS L1]`, `[SOC 2 · CC6.1]`, `[NIS2 Art 21.2.j]`, `[GDPR Art 32.1.b]`
+- **Expanded Content:**
+  - **Why this is a risk:** Clear, pedagogical explanation (2–3 sentences).
+  - **Current vs Recommended Values:** Side-by-side comparison with syntax-highlighted badges.
+  - **Remediate in Microsoft 365 Admin Center:**
+    - Step-by-step click-path in the official portal (e.g. `Microsoft Entra Admin Center > Protection > Authentication methods > Registration campaign`).
+  - **Remediate via PowerShell:**
+    - Dark-themed terminal code block with one-click copy button containing tested Microsoft Graph PowerShell cmdlets.
 
 ---
 
-## 4. UI-komponenter & Kodmallar (React / Tailwind)
+## 4. UI Components & Code Patterns (React / Tailwind)
 
-### 4.1 Förtroendekort för Pre-Consent (React-exempel)
+### 4.1 Pre-Consent Trust Card
 
 ```tsx
 import { ShieldCheck, Lock, Eye, Trash2 } from "lucide-react";
@@ -195,23 +202,23 @@ export function TrustCard() {
           <ShieldCheck className="w-6 h-6" />
         </div>
         <div>
-          <h3 className="font-semibold text-slate-100">100% skrivskyddad analys</h3>
-          <p className="text-xs text-slate-400">Inga ändringar kan göras i er miljö</p>
+          <h3 className="font-semibold text-slate-100">100% Read-Only Assessment</h3>
+          <p className="text-xs text-slate-400">Zero modifications can be made to your tenant</p>
         </div>
       </div>
 
       <ul className="space-y-3 text-sm text-slate-300">
         <li className="flex items-start gap-2.5">
           <Eye className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-          <span><strong>Enbart läsrättigheter:</strong> mAudit begär uteslutande <code>.Read</code>-access via Microsofts officiella API:er.</span>
+          <span><strong>Strictly read-only:</strong> mAudit exclusively requests <code>.Read</code> permissions via official Microsoft Graph APIs.</span>
         </li>
         <li className="flex items-start gap-2.5">
           <Lock className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-          <span><strong>Noll åtkomst till innehåll:</strong> Vi kan varken läsa inkorgar, dokument, lösenord eller personliga filer.</span>
+          <span><strong>Zero content access:</strong> We cannot read inboxes, files, Teams chats, or passwords.</span>
         </li>
         <li className="flex items-start gap-2.5">
           <Trash2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-          <span><strong>Enkel avregistrering:</strong> Du kan ta bort mAudit under <em>Företagsappar</em> i er Microsoft-portal när rapporten är klar.</span>
+          <span><strong>10-second offboarding:</strong> You can delete mAudit under <em>Enterprise Applications</em> in Microsoft Entra Admin Center right after your scan.</span>
         </li>
       </ul>
     </div>
@@ -219,14 +226,14 @@ export function TrustCard() {
 }
 ```
 
-### 4.2 Score Gauge & Resultatkomponent
+### 4.2 Score Badge & Health Gauge
 
 ```tsx
 export function ScoreBadge({ score }: { score: number }) {
   const getStatus = (s: number) => {
-    if (s >= 85) return { color: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10", label: "Mycket bra säkerhetsläge" };
-    if (s >= 65) return { color: "text-amber-400 border-amber-500/30 bg-amber-500/10", label: "Åtgärder rekommenderas" };
-    return { color: "text-rose-400 border-rose-500/30 bg-rose-500/10", label: "Kritiska risker upptäckta" };
+    if (s >= 85) return { color: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10", label: "Excellent Security Posture" };
+    if (s >= 65) return { color: "text-amber-400 border-amber-500/30 bg-amber-500/10", label: "Remediations Recommended" };
+    return { color: "text-rose-400 border-rose-500/30 bg-rose-500/10", label: "Critical Vulnerabilities Identified" };
   };
 
   const status = getStatus(score);
@@ -247,12 +254,10 @@ export function ScoreBadge({ score }: { score: number }) {
 
 ---
 
-## 5. Riktlinjer för Text & Tonalitet (Microcopy)
+## 5. Text & Microcopy Guidelines
 
-- Använd etablerade svenska termer för M365 (t.ex. *Villkorsstyrd åtkomst*, *Global administratör*, *Säkerhetsstandarder*), men behåll engelska namn i parentes om de hjälper administratören att hitta rätt i Microsoft Entra Admin Center.
-- Undvik skrämselpropaganda. Ersätt:
-  - ❌ *"ER DOMÄN KAN LÄTTAST UTNYTTJAS AV HACKARE!"*
-  - med
-  - ✔️ *"DMARC saknas: Detta innebär att utomstående kan skicka e-post i ert namn utan att mottagaren varnas. Lägg till en DMARC-post i era DNS-inställningar för att skydda ert varumärke."*
-- Tydlig information om dataradering:
-  - *"Rapporten och tillhörande analysdata sparas krypterat i 14 dagar så att ni hinner åtgärda bristerna, och raderas därefter permanent."*
+- Maintain professional, calm, and objective security language. Avoid scare tactics:
+  - ❌ *"YOUR DOMAIN CAN EASILY BE HIJACKED BY THREAT ACTORS!"*
+  - ✔️ *"DMARC record missing: External senders can forge emails from your domain without recipient filters rejecting them. Publish a DMARC TXT record in your DNS settings to safeguard domain reputation."*
+- Explicit retention and data deletion copy:
+  - *"The report and aggregated metrics are retained in encrypted form for 14 days to give your team time to resolve findings, after which they are permanently deleted."*

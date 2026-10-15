@@ -19,6 +19,8 @@ import {
   Check,
   Building,
   Calendar,
+  Lock,
+  Award,
 } from 'lucide-react';
 import { StoredScanReport, AuditFinding } from '@/lib/types';
 
@@ -42,6 +44,7 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'CRITICAL' | 'WARNING' | 'PASS' | 'NOT_APPLICABLE'>('ALL');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [selectedFramework, setSelectedFramework] = useState<'ALL' | 'CIS' | 'SOC2' | 'NIS2' | 'GDPR'>('ALL');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -159,6 +162,11 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
     const matchesCategory = selectedCategory === 'ALL' || f.category === selectedCategory;
     if (!matchesCategory) return false;
 
+    if (selectedFramework === 'CIS' && !f.compliance.cisControl) return false;
+    if (selectedFramework === 'SOC2' && (!f.compliance.soc2Criteria || f.compliance.soc2Criteria.length === 0)) return false;
+    if (selectedFramework === 'NIS2' && !f.compliance.nis2Article) return false;
+    if (selectedFramework === 'GDPR' && !f.compliance.gdprArticle) return false;
+
     if (activeFilter === 'CRITICAL') return f.severity === 'CRITICAL' && f.status === 'FAIL';
     if (activeFilter === 'WARNING') return f.status === 'WARNING';
     if (activeFilter === 'PASS') return f.status === 'PASS';
@@ -177,11 +185,22 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
     year: 'numeric',
   });
 
-  // Calculate NIS2 & GDPR summary stats
+  // Calculate Framework compliance summary stats
+  const cisFindings = findings.filter((f) => f.compliance.cisControl);
+  const cisPass = cisFindings.filter((f) => f.status === 'PASS').length;
+  const cisPct = cisFindings.length ? Math.round((cisPass / cisFindings.length) * 100) : 0;
+
+  const soc2Findings = findings.filter((f) => f.compliance.soc2Criteria && f.compliance.soc2Criteria.length > 0);
+  const soc2Pass = soc2Findings.filter((f) => f.status === 'PASS').length;
+  const soc2Pct = soc2Findings.length ? Math.round((soc2Pass / soc2Findings.length) * 100) : 0;
+
   const nis2Findings = findings.filter((f) => f.compliance.nis2Article);
   const nis2Pass = nis2Findings.filter((f) => f.status === 'PASS').length;
+  const nis2Pct = nis2Findings.length ? Math.round((nis2Pass / nis2Findings.length) * 100) : 0;
+
   const gdprFindings = findings.filter((f) => f.compliance.gdprArticle);
   const gdprPass = gdprFindings.filter((f) => f.status === 'PASS').length;
+  const gdprPct = gdprFindings.length ? Math.round((gdprPass / gdprFindings.length) * 100) : 0;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -254,17 +273,17 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
             </div>
           )}
 
-          {/* EXECUTIVE SCORE CARD & 4 KPIs */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10">
+          {/* EXECUTIVE SCORE CARD & OPERATIONAL HEALTH */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
             {/* Score Gauge */}
-            <div className="lg:col-span-4 flex">
+            <div className="lg:col-span-5 flex">
               <div className="w-full">
                 <ScoreGauge score={report.score} />
               </div>
             </div>
 
-            {/* Quick KPIs & Regulatory compliance */}
-            <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Core Operational KPIs */}
+            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* KPI 1: MFA */}
               <div className="p-5 rounded-2xl border border-border bg-surface/90 flex flex-col justify-between">
                 <div className="flex items-center justify-between mb-2">
@@ -309,46 +328,139 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
                   </span>
                 </div>
               </div>
+            </div>
+          </div>
 
-              {/* KPI 3: NIS2 Compliance */}
-              <div className="p-5 rounded-2xl border border-border bg-surface/90 flex flex-col justify-between">
+          {/* DEDICATED SECURITY & COMPLIANCE FRAMEWORKS DASHBOARD */}
+          <div className="mb-10 rounded-2xl border border-border bg-surface/80 p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
+              <div>
+                <h3 className="text-base font-bold text-white tracking-tight">{t('report.frameworks')}</h3>
+                <p className="text-xs text-text-secondary">{t('report.frameworksDesc')}</p>
+              </div>
+              <span className="text-[11px] text-text-muted">
+                {language === 'en' ? 'Click any card to filter findings' : 'Klicka på ett kort för att filtrera kontroller'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Framework 1: CIS M365 Foundations */}
+              <div
+                onClick={() => setSelectedFramework(selectedFramework === 'CIS' ? 'ALL' : 'CIS')}
+                className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  selectedFramework === 'CIS'
+                    ? 'border-amber-400 bg-amber-500/10 shadow-lg shadow-amber-500/10'
+                    : 'border-border/70 bg-surface-subtle/50 hover:border-amber-400/50'
+                }`}
+              >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">{t('report.kpi.nis2')}</span>
-                  <FileCheck className="w-4 h-4 text-brand-accent" />
+                  <span className="text-xs font-semibold text-white truncate">{t('report.kpi.cis')}</span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span className="text-[10px] font-semibold text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded border border-amber-500/30">Level 1</span>
+                    <Lock className="w-3.5 h-3.5 text-amber-400" />
+                  </div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-white mb-1">
-                    {nis2Pass} {language === 'en' ? 'of' : 'av'} {nis2Findings.length} {language === 'en' ? 'controls met' : 'kontroller'}
+                  <div className="text-xl font-bold text-white mb-1">
+                    {cisPass}/{cisFindings.length} ({cisPct}%)
                   </div>
-                  <p className="text-xs text-text-secondary">
+                  <p className="text-[11px] text-text-secondary leading-snug">
+                    {t('report.kpi.cisDesc')}
+                  </p>
+                </div>
+                <div className="w-full bg-surface h-2 rounded-full mt-3 overflow-hidden">
+                  <div
+                    className="h-full bg-amber-400 rounded-full transition-all duration-500"
+                    style={{ width: `${cisFindings.length ? (cisPass / cisFindings.length) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Framework 2: SOC 2 Type II */}
+              <div
+                onClick={() => setSelectedFramework(selectedFramework === 'SOC2' ? 'ALL' : 'SOC2')}
+                className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  selectedFramework === 'SOC2'
+                    ? 'border-purple-400 bg-purple-500/10 shadow-lg shadow-purple-500/10'
+                    : 'border-border/70 bg-surface-subtle/50 hover:border-purple-400/50'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-white truncate">{t('report.kpi.soc2')}</span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span className="text-[10px] font-semibold text-purple-300 bg-purple-500/20 px-1.5 py-0.5 rounded border border-purple-500/30">CC6 / CC7</span>
+                    <Award className="w-3.5 h-3.5 text-purple-400" />
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xl font-bold text-white mb-1">
+                    {soc2Pass}/{soc2Findings.length} ({soc2Pct}%)
+                  </div>
+                  <p className="text-[11px] text-text-secondary leading-snug">
+                    {t('report.kpi.soc2Desc')}
+                  </p>
+                </div>
+                <div className="w-full bg-surface h-2 rounded-full mt-3 overflow-hidden">
+                  <div
+                    className="h-full bg-purple-400 rounded-full transition-all duration-500"
+                    style={{ width: `${soc2Findings.length ? (soc2Pass / soc2Findings.length) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Framework 3: NIS2 Directive */}
+              <div
+                onClick={() => setSelectedFramework(selectedFramework === 'NIS2' ? 'ALL' : 'NIS2')}
+                className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  selectedFramework === 'NIS2'
+                    ? 'border-brand-primary bg-brand-primary/10 shadow-lg shadow-brand-primary/10'
+                    : 'border-border/70 bg-surface-subtle/50 hover:border-brand-primary/50'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-white truncate">{t('report.kpi.nis2')}</span>
+                  <Shield className="w-3.5 h-3.5 text-brand-accent shrink-0" />
+                </div>
+                <div>
+                  <div className="text-xl font-bold text-white mb-1">
+                    {nis2Pass}/{nis2Findings.length} ({nis2Pct}%)
+                  </div>
+                  <p className="text-[11px] text-text-secondary leading-snug">
                     {t('report.kpi.nis2Desc')}
                   </p>
                 </div>
-                <div className="w-full bg-surface-subtle h-2 rounded-full mt-3 overflow-hidden">
+                <div className="w-full bg-surface h-2 rounded-full mt-3 overflow-hidden">
                   <div
-                    className="h-full bg-brand-primary rounded-full"
+                    className="h-full bg-brand-primary rounded-full transition-all duration-500"
                     style={{ width: `${nis2Findings.length ? (nis2Pass / nis2Findings.length) * 100 : 0}%` }}
                   />
                 </div>
               </div>
 
-              {/* KPI 4: GDPR Compliance */}
-              <div className="p-5 rounded-2xl border border-border bg-surface/90 flex flex-col justify-between">
+              {/* Framework 4: GDPR Security */}
+              <div
+                onClick={() => setSelectedFramework(selectedFramework === 'GDPR' ? 'ALL' : 'GDPR')}
+                className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  selectedFramework === 'GDPR'
+                    ? 'border-emerald-400 bg-emerald-500/10 shadow-lg shadow-emerald-500/10'
+                    : 'border-border/70 bg-surface-subtle/50 hover:border-emerald-400/50'
+                }`}
+              >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">{t('report.kpi.gdpr')}</span>
-                  <FileCheck className="w-4 h-4 text-emerald-400" />
+                  <span className="text-xs font-semibold text-white truncate">{t('report.kpi.gdpr')}</span>
+                  <FileCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-white mb-1">
-                    {gdprPass} {language === 'en' ? 'of' : 'av'} {gdprFindings.length} {language === 'en' ? 'controls met' : 'kontroller'}
+                  <div className="text-xl font-bold text-white mb-1">
+                    {gdprPass}/{gdprFindings.length} ({gdprPct}%)
                   </div>
-                  <p className="text-xs text-text-secondary">
+                  <p className="text-[11px] text-text-secondary leading-snug">
                     {t('report.kpi.gdprDesc')}
                   </p>
                 </div>
-                <div className="w-full bg-surface-subtle h-2 rounded-full mt-3 overflow-hidden">
+                <div className="w-full bg-surface h-2 rounded-full mt-3 overflow-hidden">
                   <div
-                    className="h-full bg-emerald-500 rounded-full"
+                    className="h-full bg-emerald-500 rounded-full transition-all duration-500"
                     style={{ width: `${gdprFindings.length ? (gdprPass / gdprFindings.length) * 100 : 0}%` }}
                   />
                 </div>
@@ -387,70 +499,133 @@ export default function ReportPage({ params }: { params: Promise<{ token: string
 
           {/* FINDINGS LIST & FILTERS */}
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
-              <div>
-                <h3 className="text-xl font-bold text-white tracking-tight">{t('report.findingsTitle')}</h3>
-                <p className="text-xs text-text-secondary">
-                  {t('report.findingsSubtitle')}
-                </p>
+            <div className="flex flex-col gap-4 border-b border-border pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-bold text-white tracking-tight">{t('report.findingsTitle')}</h3>
+                  <p className="text-xs text-text-secondary">
+                    {t('report.findingsSubtitle')}
+                  </p>
+                </div>
+
+                {/* Status Filter Buttons */}
+                <div className="flex flex-wrap items-center gap-1.5 no-print">
+                  <button
+                    onClick={() => setActiveFilter('ALL')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                      activeFilter === 'ALL'
+                        ? 'bg-brand-primary text-white'
+                        : 'bg-surface text-text-secondary hover:text-white border border-border'
+                    }`}
+                  >
+                    {t('filter.all')} ({findings.length})
+                  </button>
+                  {criticalCount > 0 && (
+                    <button
+                      onClick={() => setActiveFilter('CRITICAL')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        activeFilter === 'CRITICAL'
+                          ? 'bg-rose-500 text-white'
+                          : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20'
+                      }`}
+                    >
+                      {t('filter.critical')} ({criticalCount})
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setActiveFilter('WARNING')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                      activeFilter === 'WARNING'
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20'
+                    }`}
+                  >
+                    {t('filter.warnings')} ({warningCount})
+                  </button>
+                  <button
+                    onClick={() => setActiveFilter('PASS')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                      activeFilter === 'PASS'
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20'
+                    }`}
+                  >
+                    {t('filter.passed')} ({passCount})
+                  </button>
+                  {naCount > 0 && (
+                    <button
+                      onClick={() => setActiveFilter('NOT_APPLICABLE')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        activeFilter === 'NOT_APPLICABLE'
+                          ? 'bg-slate-700 text-white'
+                          : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                      }`}
+                    >
+                      {t('filter.na')} ({naCount})
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Status Filter Buttons */}
-              <div className="flex flex-wrap items-center gap-1.5 no-print">
+              {/* Framework Filter Buttons */}
+              <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-surface-subtle/80 border border-border/70 no-print">
+                <span className="text-[11px] font-semibold text-text-muted px-2.5">
+                  {language === 'en' ? 'Framework:' : 'Ramverk:'}
+                </span>
                 <button
-                  onClick={() => setActiveFilter('ALL')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                    activeFilter === 'ALL'
-                      ? 'bg-brand-primary text-white'
-                      : 'bg-surface text-text-secondary hover:text-white border border-border'
+                  onClick={() => setSelectedFramework('ALL')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    selectedFramework === 'ALL'
+                      ? 'bg-brand-primary text-white shadow-sm'
+                      : 'text-text-secondary hover:text-white hover:bg-surface'
                   }`}
                 >
-                  {t('filter.all')} ({findings.length})
-                </button>
-                {criticalCount > 0 && (
-                  <button
-                    onClick={() => setActiveFilter('CRITICAL')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                      activeFilter === 'CRITICAL'
-                        ? 'bg-rose-500 text-white'
-                        : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20'
-                    }`}
-                  >
-                    {t('filter.critical')} ({criticalCount})
-                  </button>
-                )}
-                <button
-                  onClick={() => setActiveFilter('WARNING')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                    activeFilter === 'WARNING'
-                      ? 'bg-amber-500 text-white'
-                      : 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20'
-                  }`}
-                >
-                  {t('filter.warnings')} ({warningCount})
+                  {t('filter.framework.all')}
                 </button>
                 <button
-                  onClick={() => setActiveFilter('PASS')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                    activeFilter === 'PASS'
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20'
+                  onClick={() => setSelectedFramework('CIS')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    selectedFramework === 'CIS'
+                      ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                      : 'text-amber-400/90 hover:text-amber-300 hover:bg-amber-500/10'
                   }`}
                 >
-                  {t('filter.passed')} ({passCount})
+                  <Lock className="w-3 h-3" />
+                  {t('filter.framework.cis')} ({cisFindings.length})
                 </button>
-                {naCount > 0 && (
-                  <button
-                    onClick={() => setActiveFilter('NOT_APPLICABLE')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                      activeFilter === 'NOT_APPLICABLE'
-                        ? 'bg-slate-700 text-white'
-                        : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
-                    }`}
-                  >
-                    {t('filter.na')} ({naCount})
-                  </button>
-                )}
+                <button
+                  onClick={() => setSelectedFramework('SOC2')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    selectedFramework === 'SOC2'
+                      ? 'bg-purple-500 text-white font-bold shadow-sm'
+                      : 'text-purple-400/90 hover:text-purple-300 hover:bg-purple-500/10'
+                  }`}
+                >
+                  <Award className="w-3 h-3" />
+                  {t('filter.framework.soc2')} ({soc2Findings.length})
+                </button>
+                <button
+                  onClick={() => setSelectedFramework('NIS2')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    selectedFramework === 'NIS2'
+                      ? 'bg-blue-600 text-white font-bold shadow-sm'
+                      : 'text-blue-400/90 hover:text-blue-300 hover:bg-blue-500/10'
+                  }`}
+                >
+                  <Shield className="w-3 h-3" />
+                  {t('filter.framework.nis2')} ({nis2Findings.length})
+                </button>
+                <button
+                  onClick={() => setSelectedFramework('GDPR')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    selectedFramework === 'GDPR'
+                      ? 'bg-emerald-600 text-white font-bold shadow-sm'
+                      : 'text-emerald-400/90 hover:text-emerald-300 hover:bg-emerald-500/10'
+                  }`}
+                >
+                  <FileCheck className="w-3 h-3" />
+                  {t('filter.framework.gdpr')} ({gdprFindings.length})
+                </button>
               </div>
             </div>
 

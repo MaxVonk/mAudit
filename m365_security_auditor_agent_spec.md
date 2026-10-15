@@ -81,7 +81,7 @@ async function safeGraphQuery<T>(queryFn: () => Promise<T>): Promise<{ data: T |
 
 If `licenseMissing === true`:
 - The rule status becomes `STATUS: NOT_APPLICABLE_LICENSE_REQUIRED` (neutral impact on score).
-- The report explains: *"Denna kontroll kräver Microsoft Entra ID P1/P2 (ingår i t.ex. Microsoft 365 Business Premium). För er nuvarande licens rekommenderas Security Defaults istället."*
+- The report explains: *"This check requires Microsoft Entra ID P1/P2 (included in e.g. Microsoft 365 Business Premium). For your current license level, Security Defaults is recommended instead."*
 
 ---
 
@@ -100,80 +100,95 @@ export interface AuditFinding {
   currentValue: string;
   recommendedValue: string;
   compliance: {
-    nis2Article?: string;  // e.g. "Art 21.2.e (MFA & Säker kommunikation)"
-    gdprArticle?: string;  // e.g. "Art 32 (Säkerhet vid behandling)"
+    cisControl?: string;   // e.g. "CIS 1.1.1 (Level 1)"
+    soc2Criteria?: string[]; // e.g. ["CC6.1", "CC6.2"]
+    nis2Article?: string;  // e.g. "Art 21.2.e (MFA & Secure communication)"
+    gdprArticle?: string;  // e.g. "Art 32 (Security of processing)"
   };
   remediation: {
     adminCenterPath: string;
     powershellSnippet: string;
+    description?: string;
   };
 }
 ```
 
-### 5.1 Category 1: Identitet & Åtkomst (Identity & MFA)
-- **CHK-ID-01: Global MFA-täckning för standardanvändare**
+### 5.1 Category 1: Identity & Access (Identity & MFA)
+- **CHK-ID-01: Global MFA Coverage for Standard Users**
   - *Endpoint:* `GET /v1.0/reports/authenticationMethods/userRegistrationDetails`
   - *Logic:* Count users where `isMfaRegistered === true` vs total active users.
   - *Pass:* > 95% registered. Warning: 80–94%. Fail: < 80%.
   - *Remediation PS:* `Set-MsolUser -UserPrincipalName $upn -StrongAuthenticationRequirements ...`
-  - *NIS2:* Art. 21.2.j / GDPR: Art. 32.1.b.
+  - *Compliance:* CIS 1.1.1 (Level 1), SOC 2 CC6.1, NIS2 Art. 21.2.j, GDPR Art. 32.1.b.
 
-- **CHK-ID-02: Säkerhetsstandarder (Security Defaults)**
+- **CHK-ID-02: Security Defaults Enforcement**
   - *Endpoint:* `GET /v1.0/policies/identitySecurityDefaultsEnforcementPolicy`
   - *Logic:* If tenant does NOT have Entra P1/P2, `isEnabled` MUST be `true`. If tenant has Entra P1/P2, this can be false provided Conditional Access is configured.
+  - *Compliance:* CIS 1.1.2 (Level 1), SOC 2 CC6.1, NIS2 Art. 21.2.e.
 
-- **CHK-ID-03: Självbetjäning av lösenordsåterställning (SSPR)**
+- **CHK-ID-03: Self-Service Password Reset (SSPR)**
   - *Endpoint:* `GET /v1.0/policies/authorizationPolicy`
   - *Check:* Flag if users cannot reset passwords securely or if password expiration is enabled (modern NIST/CIS guidance recommends disabling arbitrary password expiration when MFA is active).
+  - *Compliance:* CIS 1.1.4 (Level 1), SOC 2 CC6.1, GDPR Art. 32.1.b.
 
-### 5.2 Category 2: Administratörskonton (Privileged Accounts)
-- **CHK-ADM-01: Antal Globala Administratörer**
+### 5.2 Category 2: Administrator Accounts (Privileged Access)
+- **CHK-ADM-01: Number of Global Administrators**
   - *Endpoint:* `GET /v1.0/directoryRoles?$filter=displayName eq 'Global Administrator'` -> `/members`
   - *Logic:* Ideal range is 2 to 4. Flag if > 4 (excessive privilege risk) or < 2 (lockout risk).
-  - *Remediation Path:* `Microsoft Entra Admin Center > Identitet > Roller och administratörer`.
+  - *Remediation Path:* `Microsoft Entra Admin Center > Identity > Roles & admins > Global Administrator`.
+  - *Compliance:* CIS 1.1.3 (Level 1), SOC 2 CC6.2, NIS2 Art. 21.2.a.
 
-- **CHK-ADM-02: Administratörer utan MFA (Critical)**
+- **CHK-ADM-02: Administrators Without Phishing-Resistant MFA (Critical)**
   - *Logic:* Cross-reference Global Admin IDs against `userRegistrationDetails`.
   - *Pass:* 100% of admins must have registered phishing-resistant or strong MFA. Any admin without MFA is an immediate CRITICAL failure.
+  - *Compliance:* CIS 1.1.1 (Level 1), SOC 2 CC6.1, NIS2 Art. 21.2.j, GDPR Art. 32.1.b.
 
-- **CHK-ADM-03: Dedikerade Admin-konton (Licens- och postlådekontroll)**
+- **CHK-ADM-03: Dedicated Admin Accounts (Mailbox & Productivity License Check)**
   - *Endpoint:* `GET /v1.0/users/{adminId}/assignedLicenses`
   - *Logic:* Global Admin accounts should NOT have an active Exchange Online mailbox or daily productivity licenses (prevents reading daily phishing emails as admin).
+  - *Compliance:* CIS 1.1.5 (Level 1), SOC 2 CC6.3, NIS2 Art. 21.2.a.
 
-### 5.3 Category 3: Villkorsstyrd Åtkomst (Conditional Access)
-- **CHK-CA-01: Blockering av föråldrad autentisering (Legacy Auth)**
+### 5.3 Category 3: Conditional Access & Zero Trust
+- **CHK-CA-01: Blocking Legacy Authentication (POP3/IMAP/SMTP)**
   - *Endpoint:* `GET /v1.0/identity/conditionalAccess/policies`
   - *Logic:* Look for an enabled policy targeting `clientAppTypes` including `exchangeActiveSync` and `other` with access control set to `block`.
   - *License Guard:* If tenant has no P1/P2, evaluate whether Security Defaults is active instead.
+  - *Compliance:* CIS 1.1.2 (Level 1), SOC 2 CC6.1, NIS2 Art. 21.2.e, GDPR Art. 32.1.d.
 
-- **CHK-CA-02: Nödåtkomstkonto (Break-Glass Account Exclusion)**
+- **CHK-CA-02: Break-Glass Emergency Access Account Exclusion**
   - *Logic:* Verify that at least one dedicated cloud-only emergency account is excluded from standard Conditional Access policies to prevent accidental lockout.
+  - *Compliance:* CIS 1.1.6 (Level 1), SOC 2 CC7.1, NIS2 Art. 21.2.c.
 
-### 5.4 Category 4: E-post- och Domänsäkerhet (DNS & Exchange)
+### 5.4 Category 4: Email & Domain Security (DNS & Exchange)
 *Executed via native DNS queries for all verified custom domains discovered in `GET /v1.0/domains`:*
-- **CHK-DNS-01: SPF-postens giltighet**
+- **CHK-DNS-01: SPF Record Validity**
   - *Method:* `dns.resolveTxt(domain)`
   - *Logic:* Must contain `v=spf1 include:spf.protection.outlook.com` and end with `-all` (HardFail) or `~all` (SoftFail). Flag if `+all` or missing.
   - *Remediation:* Create TXT record `v=spf1 include:spf.protection.outlook.com -all`.
+  - *Compliance:* CIS 2.1.1 (Level 1), SOC 2 CC6.6, NIS2 Art. 21.2.e.
 
-- **CHK-DNS-02: DMARC-efterlevnad**
+- **CHK-DNS-02: DMARC Policy Enforcement**
   - *Method:* `dns.resolveTxt(`_dmarc.${domain}`)`
   - *Logic:* Pass if record exists with `p=quarantine` or `p=reject`. Warning if `p=none`. Fail if no DMARC record exists.
+  - *Compliance:* CIS 2.1.2 (Level 1), SOC 2 CC6.6, NIS2 Art. 21.2.e, GDPR Art. 32.1.b.
 
-- **CHK-DNS-03: DKIM-konfiguration**
+- **CHK-DNS-03: DKIM Cryptographic Email Signature**
   - *Method:* `dns.resolveCname(`selector1._domainkey.${domain}`)`
   - *Logic:* Verifies selector presence pointing to `onmicrosoft.com`.
+  - *Compliance:* CIS 2.1.3 (Level 2), SOC 2 CC6.6, NIS2 Art. 21.2.e.
 
-### 5.5 Category 5: Delning & Samarbete (SharePoint & Teams)
-- **CHK-SHR-01: Anonym extern länkdelning**
+### 5.5 Category 5: Sharing & Collaboration (SharePoint & Teams)
+- **CHK-SHR-01: Anonymous External Link Sharing**
   - *Endpoint:* `GET /v1.0/admin/sharepoint/settings` (or Graph organization sharing policy endpoint)
   - *Logic:* `sharingCapability` should be `ExistingGuests` or `Disabled`, NOT `ExternalUserAndGuestSharing` (Anonymous "Anyone with the link").
+  - *Compliance:* CIS 4.1.1 (Level 1), SOC 2 CC6.3, GDPR Art. 32.1.b, NIS2 Art. 21.2.e.
 
-### 5.6 Category 6: Applikationsstyrning (Consent Governance)
-- **CHK-APP-01: Användares behörighet att godkänna tredjepartsappar**
+### 5.6 Category 6: Application Governance (OAuth & Consent)
+- **CHK-APP-01: User Consent for Third-Party Applications**
   - *Endpoint:* `GET /v1.0/policies/authorizationPolicy`
   - *Logic:* `defaultUserRolePermissions.allowedToCreateApps` must be `false` and `permissionGrantPolicyDefinitions` must require admin approval for OAuth consent.
   - *Remediation PS:* `Set-MgPolicyAuthorizationPolicy -DefaultUserRolePermissions @{AllowedToCreateApps = $false}`
+  - *Compliance:* CIS 5.1.1 (Level 1), SOC 2 CC6.3, NIS2 Art. 21.2.d, GDPR Art. 32.
 
 ---
 
@@ -211,7 +226,7 @@ $$Score = \sum \left( \frac{\text{Earned Weight per Category}}{\text{Total Max W
      isPublicToken String   @unique // Cryptographic random string for URL
    }
    ```
-3. **One-Click Data Deletion:** The report page must contain a prominent "Radera denna rapport omedelbart" button which purges the row from the database.
+3. **One-Click Data Deletion:** The report page must contain a prominent "Delete data" ("Radera data") button which purges the row from the database.
 
 ---
 
@@ -225,11 +240,11 @@ $$Score = \sum \left( \frac{\text{Earned Weight per Category}}{\text{Total Max W
    - Implement `GraphScanner` and safe API invocation wrappers.
    - Implement `DnsHygieneScanner` using Node's `dns/promises`.
 3. **Phase 3: Assertion Engine & Remediation Generator**
-   - Implement all 15 audit check rules matching the `AuditFinding` interface.
-   - Provide localized Swedish copy for admin center paths, NIS2 references, and PowerShell scripts.
+   - Implement all 13 core audit check rules matching the `AuditFinding` interface.
+   - Provide bilingual localized copy (English & Swedish) for admin center paths, compliance framework references, and PowerShell scripts.
 4. **Phase 4: Diffing & Progress Tracking**
    - Query if a previous report exists for the given `tenantIdHash`.
    - Compute delta metrics: score change, resolved findings, new findings.
 5. **Phase 5: Public Report UI & Export**
-   - Build `/report/[token]` with score gauges, category filters, and finding cards.
-   - Add a printable/PDF-friendly layout.
+   - Build `/report/[token]` with score gauges, framework tabs, category filters, and finding cards.
+   - Add a printable/PDF-friendly layout and full internationalization.

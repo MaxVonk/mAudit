@@ -126,8 +126,14 @@ function ScanView() {
                 <AlertTriangle className="w-6 h-6" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-white">Microsoft Graph Autentiseringsfel</h2>
-                <p className="text-xs text-text-secondary">Kunde inte hämta access token för den anslutna tenanten</p>
+                <h2 className="text-lg font-bold text-white">
+                  {language === 'en' ? 'Microsoft Graph Authentication Error' : 'Microsoft Graph Autentiseringsfel'}
+                </h2>
+                <p className="text-xs text-text-secondary">
+                  {language === 'en'
+                    ? 'Could not obtain access token for the connected tenant'
+                    : 'Kunde inte hämta access token för den anslutna tenanten'}
+                </p>
               </div>
             </div>
 
@@ -138,17 +144,37 @@ function ScanView() {
             <div className="p-4 rounded-xl bg-surface-subtle border border-border text-xs text-text-secondary space-y-2 mb-6">
               <div className="flex items-center gap-2 font-semibold text-white">
                 <Key className="w-4 h-4 text-brand-accent" />
-                <span>Hur du åtgärdar detta:</span>
+                <span>{language === 'en' ? 'How to resolve this:' : 'Hur du åtgärdar detta:'}</span>
               </div>
               <p>
-                Felet <strong className="text-white">AADSTS7000215 (Invalid client secret)</strong> beror oftast på att:
+                {language === 'en' ? (
+                  <>The error <strong className="text-white">AADSTS7000215 (Invalid client secret)</strong> typically occurs because:</>
+                ) : (
+                  <>Felet <strong className="text-white">AADSTS7000215 (Invalid client secret)</strong> beror oftast på att:</>
+                )}
               </p>
               <ul className="list-disc list-inside space-y-1 text-text-muted pl-1">
-                <li>Värdet som kopierades från Azure Portal var <strong className="text-white">Secret ID</strong> istället för <strong className="text-white">Value</strong>.</li>
-                <li>Ett tecken råkade falla bort under kopieringen (t.ex. sista tecknet).</li>
+                <li>
+                  {language === 'en' ? (
+                    <>The string copied from Azure Portal was the <strong className="text-white">Secret ID</strong> instead of the <strong className="text-white">Value</strong>.</>
+                  ) : (
+                    <>Värdet som kopierades från Azure Portal var <strong className="text-white">Secret ID</strong> istället för <strong className="text-white">Value</strong>.</>
+                  )}
+                </li>
+                <li>
+                  {language === 'en' ? (
+                    <>A character was accidentally dropped during copying (e.g. trailing character).</>
+                  ) : (
+                    <>Ett tecken råkade falla bort under kopieringen (t.ex. sista tecknet).</>
+                  )}
+                </li>
               </ul>
               <p className="pt-1 text-slate-300">
-                👉 Gå till <em>Entra ID &gt; App registrations &gt; mAudit &gt; Certificates &amp; secrets</em>, klicka på <strong>+ New client secret</strong>, klicka på <strong>kopieringsikonen</strong> i kolumnen <strong>Value</strong> och klistra in i din <code className="text-brand-accent font-mono">.env</code>. Starta sedan om servern.
+                {language === 'en' ? (
+                  <>👉 Navigate to <em>Entra ID &gt; App registrations &gt; mAudit &gt; Certificates &amp; secrets</em>, click <strong>+ New client secret</strong>, copy the string in the <strong>Value</strong> column, and paste it into your <code className="text-brand-accent font-mono">.env</code>. Then restart the server.</>
+                ) : (
+                  <>👉 Gå till <em>Entra ID &gt; App registrations &gt; mAudit &gt; Certificates &amp; secrets</em>, klicka på <strong>+ New client secret</strong>, klicka på <strong>kopieringsikonen</strong> i kolumnen <strong>Value</strong> och klistra in i din <code className="text-brand-accent font-mono">.env</code>. Starta sedan om servern.</>
+                )}
               </p>
             </div>
 
@@ -157,7 +183,7 @@ function ScanView() {
                 onClick={() => window.location.reload()}
                 className="px-4 py-2.5 rounded-xl bg-brand-primary text-xs font-semibold text-white hover:bg-brand-hover transition-colors"
               >
-                Försök igen
+                {language === 'en' ? 'Try Again' : 'Försök igen'}
               </button>
               <button
                 onClick={async () => {
@@ -171,7 +197,7 @@ function ScanView() {
                 }}
                 className="px-4 py-2.5 rounded-xl border border-border bg-surface-subtle text-xs font-semibold text-text-secondary hover:text-white transition-colors"
               >
-                Fortsätt med demodata istället
+                {language === 'en' ? 'Continue with demo data instead' : 'Fortsätt med demodata istället'}
               </button>
             </div>
           </div>

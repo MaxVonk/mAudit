@@ -1,4 +1,5 @@
 import { AuditFinding, SummaryStats } from '../types';
+import { enrichCompliance } from '../compliance';
 
 export interface DemoTenantProfile {
   id: string;
@@ -463,4 +464,12 @@ export const DEMO_PROFILES: Record<string, DemoTenantProfile> = {
     ],
   },
 };
+
+// Auto-enrich all demo profiles with CIS and SOC 2 compliance mappings
+Object.values(DEMO_PROFILES).forEach((profile) => {
+  profile.findings = profile.findings.map((f) => ({
+    ...f,
+    compliance: enrichCompliance(f.id, f.compliance),
+  }));
+});
 

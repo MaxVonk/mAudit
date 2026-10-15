@@ -14,30 +14,17 @@ import {
   ExternalLink,
   Shield,
   FileCheck,
+  Lock,
+  Award,
 } from 'lucide-react';
 import { AuditFinding } from '@/lib/types';
 import { useLanguage } from '@/lib/i18n';
+import { FINDING_LOCALIZATIONS, translateCurrentValue } from '@/lib/finding-translations';
 
 interface FindingCardProps {
   finding: AuditFinding;
   defaultExpanded?: boolean;
 }
-
-const ENGLISH_TITLES: Record<string, string> = {
-  'CHK-ID-01': 'Global MFA Coverage for Standard Users',
-  'CHK-ID-02': 'Security Defaults Enforcement',
-  'CHK-ID-03': 'Self-Service Password Reset (SSPR)',
-  'CHK-ADM-01': 'Number of Global Administrators',
-  'CHK-ADM-02': 'Administrators Without Phishing-Resistant MFA',
-  'CHK-ADM-03': 'Dedicated Admin Accounts (Mailbox & Productivity License Check)',
-  'CHK-CA-01': 'Blocking Legacy Authentication (POP3/IMAP/SMTP)',
-  'CHK-CA-02': 'Break-Glass Emergency Access Account Exclusion',
-  'CHK-DNS-01': 'SPF Record Validity',
-  'CHK-DNS-02': 'DMARC Enforcement & Anti-Spoofing Policy',
-  'CHK-DNS-03': 'DKIM Signing Configuration',
-  'CHK-SHR-01': 'Anonymous External Link Sharing in SharePoint & OneDrive',
-  'CHK-APP-01': 'User Consent for Third-Party Applications (OAuth Consent)',
-};
 
 export function FindingCard({ finding, defaultExpanded = false }: FindingCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
@@ -100,20 +87,31 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
     }
   };
 
+  // Base ID lookup without domain suffix (e.g., CHK-DNS-01-domain.com -> CHK-DNS-01)
+  const baseId = finding.id.startsWith('CHK-DNS-') ? finding.id.substring(0, 10) : finding.id;
+  const loc = FINDING_LOCALIZATIONS[baseId] || FINDING_LOCALIZATIONS[finding.id];
+
+  const domainSuffix = finding.id.startsWith('CHK-DNS-') ? finding.id.replace(/^CHK-DNS-\d+-/, '') : null;
+  const baseTitle = (language === 'en' ? loc?.title.en : loc?.title.sv) || finding.title;
+  const title = domainSuffix && !baseTitle.includes(domainSuffix) ? `${baseTitle} (${domainSuffix})` : baseTitle;
+  const description = (language === 'en' ? loc?.description.en : loc?.description.sv) || finding.remediation.description;
+  const recommendedValue = (language === 'en' ? loc?.recommendedValue.en : loc?.recommendedValue.sv) || finding.recommendedValue;
+  const adminCenterPath = (language === 'en' ? loc?.adminCenterPath.en : loc?.adminCenterPath.sv) || finding.remediation.adminCenterPath;
+  const powershellSnippet = (language === 'en' ? loc?.powershellSnippet?.en : loc?.powershellSnippet?.sv) || finding.remediation.powershellSnippet;
+  const currentValue = translateCurrentValue(finding, language);
+  const nis2Article = (language === 'en' ? loc?.nis2Article?.en : loc?.nis2Article?.sv) || finding.compliance.nis2Article;
+  const gdprArticle = (language === 'en' ? loc?.gdprArticle?.en : loc?.gdprArticle?.sv) || finding.compliance.gdprArticle;
+
   const copyToClipboard = async () => {
-    if (!finding.remediation.powershellSnippet) return;
+    if (!powershellSnippet) return;
     try {
-      await navigator.clipboard.writeText(finding.remediation.powershellSnippet);
+      await navigator.clipboard.writeText(powershellSnippet);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Kunde inte kopiera:', err);
+      console.error('Failed to copy:', err);
     }
   };
-
-  // Base ID lookup without domain suffix (e.g., CHK-DNS-01-domain.com -> CHK-DNS-01)
-  const baseId = finding.id.substring(0, 10);
-  const title = (language === 'en' && ENGLISH_TITLES[baseId]) || (language === 'en' && ENGLISH_TITLES[finding.id]) || finding.title;
 
   return (
     <div
@@ -136,18 +134,30 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
               {getSeverityBadge(finding.severity, finding.status)}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-xs text-text-muted">
+            <div className="flex flex-wrap items-center gap-1.5 text-xs text-text-muted">
               <span className="font-mono text-[11px] text-text-secondary">{finding.id}</span>
-              {finding.compliance.nis2Article && (
-                <span className="inline-flex items-center gap-1 rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] text-blue-300 border border-blue-500/20">
-                  <Shield className="w-2.5 h-2.5" />
-                  {finding.compliance.nis2Article.split(' ')[0]} {finding.compliance.nis2Article.split(' ')[1]}
+              {finding.compliance.cisControl && (
+                <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-300 border border-amber-500/20 font-medium">
+                  <Lock className="w-2.5 h-2.5" />
+                  {finding.compliance.cisControl} {finding.compliance.cisLevel ? `(${finding.compliance.cisLevel === 'Level 1' ? 'L1' : 'L2'})` : ''}
                 </span>
               )}
-              {finding.compliance.gdprArticle && (
+              {finding.compliance.soc2Criteria && finding.compliance.soc2Criteria.length > 0 && (
+                <span className="inline-flex items-center gap-1 rounded bg-purple-500/10 px-1.5 py-0.5 text-[10px] text-purple-300 border border-purple-500/20 font-medium">
+                  <Award className="w-2.5 h-2.5" />
+                  SOC 2 · {finding.compliance.soc2Criteria.join(', ')}
+                </span>
+              )}
+              {nis2Article && (
+                <span className="inline-flex items-center gap-1 rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] text-blue-300 border border-blue-500/20">
+                  <Shield className="w-2.5 h-2.5" />
+                  {nis2Article.split(' ')[0]} {nis2Article.split(' ')[1]}
+                </span>
+              )}
+              {gdprArticle && (
                 <span className="inline-flex items-center gap-1 rounded bg-cyan-500/10 px-1.5 py-0.5 text-[10px] text-cyan-300 border border-cyan-500/20">
                   <FileCheck className="w-2.5 h-2.5" />
-                  {finding.compliance.gdprArticle}
+                  {gdprArticle.split(' ')[0]} {gdprArticle.split(' ')[1]}
                 </span>
               )}
             </div>
@@ -170,12 +180,12 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
       {isExpanded && (
         <div className="border-t border-border/70 p-4 sm:p-6 space-y-5 text-sm bg-surface-subtle/30 rounded-b-xl">
           {/* Pedagogical Explanation */}
-          {finding.remediation.description && (
+          {description && (
             <div>
               <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">
                 {language === 'en' ? 'Why this is a risk' : 'Varför detta är en risk'}
               </h4>
-              <p className="text-text-secondary leading-relaxed">{finding.remediation.description}</p>
+              <p className="text-text-secondary leading-relaxed">{description}</p>
             </div>
           )}
 
@@ -194,7 +204,7 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
                     : 'text-rose-400'
                 }`}
               >
-                {finding.currentValue}
+                {currentValue}
               </span>
             </div>
 
@@ -202,25 +212,25 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
               <span className="text-xs font-semibold text-text-muted block mb-1">
                 {language === 'en' ? 'Recommended setting' : 'Rekommenderat läge'}
               </span>
-              <span className="font-mono text-xs text-emerald-400">{finding.recommendedValue}</span>
+              <span className="font-mono text-xs text-emerald-400">{recommendedValue}</span>
             </div>
           </div>
 
           {/* Admin Center Click-Path */}
-          {finding.remediation.adminCenterPath && (
+          {adminCenterPath && (
             <div className="rounded-lg bg-surface p-4 border border-border">
               <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-white">
                 <ExternalLink className="h-4 w-4 text-brand-accent" />
                 <span>{language === 'en' ? 'Remediate in Microsoft 365 Admin Center' : 'Åtgärda via Microsoft 365 Admin Center'}</span>
               </div>
               <div className="text-xs font-mono text-text-secondary bg-surface-subtle/60 p-2.5 rounded border border-border/50 break-words">
-                {finding.remediation.adminCenterPath}
+                {adminCenterPath}
               </div>
             </div>
           )}
 
           {/* PowerShell Remediation */}
-          {finding.remediation.powershellSnippet && (
+          {powershellSnippet && (
             <div className="rounded-lg bg-slate-950 p-4 border border-border/80">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2 text-xs font-semibold text-slate-200">
@@ -245,30 +255,63 @@ export function FindingCard({ finding, defaultExpanded = false }: FindingCardPro
                 </button>
               </div>
               <pre className="font-mono text-xs text-emerald-300 overflow-x-auto p-2 bg-slate-900/80 rounded border border-slate-800">
-                <code>{finding.remediation.powershellSnippet}</code>
+                <code>{powershellSnippet}</code>
               </pre>
             </div>
           )}
 
-          {/* Regulatory details */}
-          {(finding.compliance.nis2Article || finding.compliance.gdprArticle) && (
-            <div className="flex flex-wrap gap-4 text-xs text-text-muted pt-2 border-t border-border/50">
-              {finding.compliance.nis2Article && (
-                <div>
-                  <span className="font-semibold text-blue-400">
-                    {language === 'en' ? 'NIS2 Mapping: ' : 'NIS2-koppling: '}
-                  </span>
-                  <span>{finding.compliance.nis2Article}</span>
-                </div>
-              )}
-              {finding.compliance.gdprArticle && (
-                <div>
-                  <span className="font-semibold text-cyan-400">
-                    {language === 'en' ? 'GDPR Mapping: ' : 'GDPR-koppling: '}
-                  </span>
-                  <span>{finding.compliance.gdprArticle}</span>
-                </div>
-              )}
+          {/* Compliance & Regulatory details */}
+          {(finding.compliance.cisControl || finding.compliance.soc2Criteria || nis2Article || gdprArticle) && (
+            <div className="pt-3 border-t border-border/50">
+              <span className="text-[11px] font-semibold text-text-muted uppercase tracking-wider block mb-2">
+                {language === 'en' ? 'Compliance & Security Framework Mappings' : 'Koppling till säkerhetsramverk & standarder'}
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                {finding.compliance.cisControl && (
+                  <div className="p-2.5 rounded bg-surface/70 border border-border/60">
+                    <div className="flex items-center gap-1.5 font-semibold text-amber-300 mb-0.5">
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>CIS Microsoft 365 Foundations</span>
+                    </div>
+                    <div className="text-text-secondary text-[11px]">
+                      {finding.compliance.cisControl} · {finding.compliance.cisLevel || 'Level 1'}
+                    </div>
+                  </div>
+                )}
+                {finding.compliance.soc2Criteria && finding.compliance.soc2Criteria.length > 0 && (
+                  <div className="p-2.5 rounded bg-surface/70 border border-border/60">
+                    <div className="flex items-center gap-1.5 font-semibold text-purple-300 mb-0.5">
+                      <Award className="w-3.5 h-3.5" />
+                      <span>SOC 2 Type II (Trust Services)</span>
+                    </div>
+                    <div className="text-text-secondary text-[11px]">
+                      {finding.compliance.soc2Criteria.join(', ')} — {finding.compliance.soc2Description || 'Security Controls'}
+                    </div>
+                  </div>
+                )}
+                {nis2Article && (
+                  <div className="p-2.5 rounded bg-surface/70 border border-border/60">
+                    <div className="flex items-center gap-1.5 font-semibold text-blue-300 mb-0.5">
+                      <Shield className="w-3.5 h-3.5" />
+                      <span>NIS2 Directive (EU 2022/2555)</span>
+                    </div>
+                    <div className="text-text-secondary text-[11px]">
+                      {nis2Article}
+                    </div>
+                  </div>
+                )}
+                {gdprArticle && (
+                  <div className="p-2.5 rounded bg-surface/70 border border-border/60">
+                    <div className="flex items-center gap-1.5 font-semibold text-cyan-300 mb-0.5">
+                      <FileCheck className="w-3.5 h-3.5" />
+                      <span>GDPR (EU 2016/679)</span>
+                    </div>
+                    <div className="text-text-secondary text-[11px]">
+                      {gdprArticle}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

@@ -7,6 +7,7 @@ import { auditDomainDns } from './dns-scanner';
 import { calculateHealthScore } from '../scoring';
 import { computeScanDiff } from '../diff';
 import { prisma } from '../db';
+import { enrichCompliance } from '../compliance';
 
 export async function runLiveTenantAudit(
   graphClient: Client,
@@ -362,7 +363,13 @@ export async function runLiveTenantAudit(
     companyName,
   };
 
-  const scoreReport = calculateHealthScore(findings, summaryStats);
+  // Enrich all findings with CIS and SOC 2 mappings
+  const enrichedFindings = findings.map((f) => ({
+    ...f,
+    compliance: enrichCompliance(f.id, f.compliance),
+  }));
+
+  const scoreReport = calculateHealthScore(enrichedFindings, summaryStats);
 
   // 10. Check for prior scan diffing
   const previousReport = await prisma.scanReport.findFirst({
@@ -376,7 +383,7 @@ export async function runLiveTenantAudit(
       const prevFindings = JSON.parse(previousReport.findings);
       diff = computeScanDiff(
         scoreReport.overallScore,
-        findings,
+        enrichedFindings,
         previousReport.score,
         prevFindings,
         previousReport.createdAt.toISOString()
@@ -396,7 +403,7 @@ export async function runLiveTenantAudit(
       companyName,
       score: scoreReport.overallScore,
       categoryScores: JSON.stringify(scoreReport.categoryScores),
-      findings: JSON.stringify(findings),
+      findings: JSON.stringify(enrichedFindings),
       summaryStats: JSON.stringify(summaryStats),
       expiresAt,
       isPublicToken: publicToken,
@@ -411,7 +418,7 @@ export async function runLiveTenantAudit(
     companyName,
     score: scoreReport.overallScore,
     categoryScores: scoreReport.categoryScores,
-    findings,
+    findings: enrichedFindings,
     summaryStats,
     createdAt: record.createdAt.toISOString(),
     expiresAt: expiresAt.toISOString(),

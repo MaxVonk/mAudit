@@ -148,6 +148,8 @@ mAudit/
 │   ├── db.ts                      # Prisma database client singleton
 │   ├── types.ts                   # Domain models & TypeScript interfaces
 │   ├── scoring.ts                 # Health index calculation (90/70 bands)
+│   ├── compliance.ts              # CIS Foundations & SOC 2 Type II compliance mapping engine
+│   ├── finding-translations.ts    # Comprehensive EN/SV dictionary for findings & values
 │   ├── diff.ts                    # Scan comparison engine
 │   ├── i18n.tsx                   # English & Swedish localization context & dictionary
 │   └── scanner/

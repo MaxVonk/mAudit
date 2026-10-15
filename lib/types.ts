@@ -26,6 +26,10 @@ export interface AuditFinding {
   compliance: {
     nis2Article?: string; // e.g. "Art 21.2.e (MFA & Säker kommunikation)"
     gdprArticle?: string; // e.g. "Art 32 (Säkerhet vid behandling)"
+    cisControl?: string; // e.g. "CIS M365 v3.0 1.1.1"
+    cisLevel?: 'Level 1' | 'Level 2';
+    soc2Criteria?: string[]; // e.g. ["CC6.1", "CC6.2"]
+    soc2Description?: string; // e.g. "Logical Access & Identity Governance"
   };
   remediation: {
     adminCenterPath: string;
