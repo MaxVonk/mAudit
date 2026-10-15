@@ -1,8 +1,20 @@
 # mAudit — Microsoft 365 Security Posture Auditor (CSPM)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Next.js](https://img.shields.io/badge/Next.js-15.2-black.svg)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC.svg)](https://tailwindcss.com/)
+[![Compliance](https://img.shields.io/badge/Compliance-CIS%20%7C%20SOC%202%20%7C%20NIS2%20%7C%20GDPR-emerald.svg)](https://github.com/MaxVonk/mAudit)
 
-**mAudit** is a production-grade, automated Microsoft 365 security posture assessment platform. It inspects an organization's Microsoft Entra ID and M365 tenant using read-only permissions via OAuth2 Admin Consent, analyzes configurations against CIS benchmarks, maps gaps to **NIS2 (Directive (EU) 2022/2555 Art. 21)** and **GDPR (Art. 32)**, and delivers an actionable, shareable web report.
+**mAudit** is a production-grade, automated Microsoft 365 security posture management (CSPM) platform. It inspects an organization's Microsoft Entra ID and M365 tenant using read-only permissions via OAuth2 Admin Consent, evaluates configurations against CIS benchmarks, maps gaps directly to **CIS Microsoft 365 Foundations**, **SOC 2 Type II**, **NIS2 (Directive (EU) 2022/2555 Art. 21)**, and **GDPR (Art. 32)**, and delivers an interactive, actionable, shareable web report.
+
+---
+
+## 📸 Posture Report Preview
+
+![mAudit Cloud Security Posture Report](screenshots/result.png)
+
+*Interactive cloud security report displaying executive health score, operational KPIs, multi-framework compliance readiness (CIS, SOC 2, NIS2, GDPR), and deep-dive remediation cards.*
 
 ---
 
@@ -13,8 +25,11 @@
    - Gracefully marks premium checks as `NOT_APPLICABLE` for tenants without Entra ID P1/P2 licenses, evaluating *Security Defaults* instead of applying unfair score penalties.
 2. **Actionable Remediation Engine:**
    - Every finding includes both a direct Microsoft 365 Admin Center click-path and copy-pasteable PowerShell CLI remediation snippets.
-3. **Regulatory Mapping (NIS2 & GDPR):**
-   - Directly links technical vulnerabilities to European compliance mandates: **NIS2 Art. 21** (MFA, cyber hygiene, incident response) and **GDPR Art. 32** (security of processing).
+3. **Multi-Framework Regulatory & Standards Mapping:**
+   - **CIS Microsoft 365 Foundations Benchmark:** Technical baseline controls (Level 1 & Level 2).
+   - **SOC 2 Type II:** Trust Services Criteria for logical access and system operations (CC6 / CC7).
+   - **NIS2 Directive:** European cybersecurity risk management measures (Directive (EU) 2022/2555 Art. 21).
+   - **GDPR Security of Processing:** Technical safeguards against data leakage and unauthorized access (Regulation (EU) 2016/679 Art. 32).
 4. **Scan Diffing ("Before & After"):**
    - Tracks tenant remediation progress over time by matching tenant ID hashes, highlighting score deltas (`+X points`), resolved risks, and new misconfigurations.
 5. **Zero-Retention Privacy Architecture:**
@@ -24,7 +39,7 @@
 6. **Nordic Minimalist Dark UX:**
    - Built with Next.js 15 App Router, React 19, and Tailwind CSS.
    - Dedicated **Pre-Consent Trust Screen** explaining permissions, zero-content access, and 10-second Enterprise App offboarding.
-7. **Bilingual Support (English & Swedish):**
+7. **Bilingual By Design (English & Swedish):**
    - Full application localization for both English and Swedish.
    - Instant language switcher (`🇬🇧 EN` / `🇸🇪 SV`) in the navigation bar with `localStorage` preference persistence.
 
@@ -75,10 +90,11 @@ npm run build
 ## 🎮 Instant Demo Mode
 
 You can test and evaluate the entire end-to-end application **without needing an active Microsoft Azure tenant**:
-- Click **"Try with demo data"** (`"Testa med demodata"`) on the homepage or navigation bar.
+- Click **"Try demo (Nordic Retail)"** on the homepage or navigation bar.
 - Generates a complete security evaluation report for a sample organization (*Nordic Retail AB*).
-- Click **"Simulate Rescan (Diff)"** (`"Simulera om-skanning (Diff)"`) inside the report to see scan diffing in action with positive score deltas and resolved vulnerabilities.
-- Click **"Delete Data"** (`"Radera data"`) to test the one-click permanent database purge.
+- Click **"Simulate re-scan (Diff)"** inside the report to see scan diffing in action with positive score deltas and resolved vulnerabilities.
+- Filter findings by framework: click **CIS**, **SOC 2**, **NIS2**, or **GDPR** cards to see related technical checks.
+- Click **"Delete data"** to test the one-click permanent database purge.
 
 ---
 
@@ -129,13 +145,14 @@ mAudit/
 │   ├── scan/
 │   │   └── [id]/page.tsx          # Real-time scan progression & ticker
 │   ├── report/
-│   │   └── [token]/page.tsx       # Assessment Report, filters & PDF view
+│   │   └── [token]/page.tsx       # Assessment Report, framework tabs & PDF view
 │   └── api/
 │       ├── auth/
 │       │   ├── consent/route.ts   # Microsoft OAuth2 Consent URL generator
 │       │   └── callback/route.ts  # Admin consent OAuth redirect handler
 │       ├── scan/
-│       │   └── demo/route.ts      # Instant demo scan generator
+│       │   ├── demo/route.ts      # Instant demo scan generator
+│       │   └── live/route.ts      # Live Microsoft Graph scanner API
 │       └── report/
 │           └── [token]/route.ts   # Report retrieval & one-click purge
 ├── components/
@@ -160,6 +177,8 @@ mAudit/
 │       └── mock-data.ts           # Demo tenant profiles & mock findings
 ├── prisma/
 │   └── schema.prisma              # ScanReport database schema
+├── screenshots/
+│   └── result.png                 # Posture report visual preview
 └── tests/
     └── engine-verification.ts     # Automated unit & integration test suite
 ```
