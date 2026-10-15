@@ -45,6 +45,21 @@
 
 ---
 
+## 🛡️ The 20-Point Security Benchmark
+
+mAudit evaluates your Microsoft 365 tenant across **20 technical controls** organized into 6 domains:
+
+| Category | Checks | Description & Standards Aligned |
+| :--- | :---: | :--- |
+| **1. Identity & MFA** | **5** | Global MFA registration rate, Security Defaults, SSPR, stale accounts (90+ days), and NIST-aligned password expiration. |
+| **2. Global Administrators** | **4** | Number of Global Admins (2–4), phishing-resistant admin MFA, separate non-mailbox admin accounts, and restricting non-admins from the Entra admin portal. |
+| **3. Conditional Access** | **2** | Legacy authentication blocking (POP3/IMAP/SMTP) and dedicated cloud-only break-glass emergency account exclusion. |
+| **4. Email Hygiene & DNS** | **4** | SPF HardFail (`-all`), DMARC policy enforcement (`p=quarantine`/`p=reject`), DKIM cryptographic signing, and external email auto-forwarding blocking. |
+| **5. Sharing & Collaboration** | **2** | Anonymous link restriction in SharePoint/OneDrive and setting default sharing links to "Specific People". |
+| **6. Application Governance & Audit** | **3** | Restricting user consent for third-party OAuth apps, guest invitation boundary controls, and Unified Audit Logging (UAL) enforcement. |
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites

@@ -53,8 +53,8 @@ export const DICTIONARY: Translations = {
   // 6 Categories
   'cat.title': { en: 'What mAudit inspects in your environment', sv: 'Vad mAudit kontrollerar i er miljö' },
   'cat.subtitle': {
-    en: '15 in-depth security checks map vulnerabilities and provide actionable PowerShell remediation.',
-    sv: '15 djupgående säkerhetskontroller kartlägger sårbarheter och ger konkreta åtgärder med PowerShell.',
+    en: '20 in-depth security checks map vulnerabilities and provide actionable PowerShell remediation.',
+    sv: '20 djupgående säkerhetskontroller kartlägger sårbarheter och ger konkreta åtgärder med PowerShell.',
   },
   'cat.1.title': { en: '1. Identity & MFA', sv: '1. Identitet & MFA' },
   'cat.1.desc': {

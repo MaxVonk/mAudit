@@ -131,6 +131,17 @@ export interface AuditFinding {
   - *Check:* Flag if users cannot reset passwords securely or if password expiration is enabled (modern NIST/CIS guidance recommends disabling arbitrary password expiration when MFA is active).
   - *Compliance:* CIS 1.1.4 (Level 1), SOC 2 CC6.1, GDPR Art. 32.1.b.
 
+- **CHK-ID-04: Stale / Inactive User Accounts (90+ Days)**
+  - *Endpoint:* `GET /v1.0/users?$filter=accountEnabled eq true&$select=id,displayName,userPrincipalName,signInActivity`
+  - *Logic:* Flag accounts where `signInActivity.lastSignInDateTime` is older than 90 days. Stale accounts expand credential stuffing surface.
+  - *Pass:* 0 inactive accounts without sign-in for 90+ days.
+  - *Compliance:* CIS 1.1.8 (Level 1), SOC 2 CC6.2, NIS2 Art. 21.2.a, GDPR Art. 32.1.b.
+
+- **CHK-ID-05: Modern Password Expiration Policy (NIST Aligned)**
+  - *Endpoint:* `GET /v1.0/domains` (`passwordValidityPeriodInDays`)
+  - *Logic:* Verify passwords do not have arbitrary periodic rotation enforced (e.g. 60 or 90 days) when mandatory MFA is active.
+  - *Compliance:* CIS 1.1.4 (Level 1), SOC 2 CC6.1, NIS2 Art. 21.2.e, GDPR Art. 32.1.b.
+
 ### 5.2 Category 2: Administrator Accounts (Privileged Access)
 - **CHK-ADM-01: Number of Global Administrators**
   - *Endpoint:* `GET /v1.0/directoryRoles?$filter=displayName eq 'Global Administrator'` -> `/members`
@@ -147,6 +158,11 @@ export interface AuditFinding {
   - *Endpoint:* `GET /v1.0/users/{adminId}/assignedLicenses`
   - *Logic:* Global Admin accounts should NOT have an active Exchange Online mailbox or daily productivity licenses (prevents reading daily phishing emails as admin).
   - *Compliance:* CIS 1.1.5 (Level 1), SOC 2 CC6.3, NIS2 Art. 21.2.a.
+
+- **CHK-ADM-04: Restrict Non-Admins from Entra Admin Portals**
+  - *Endpoint:* `GET /v1.0/policies/authorizationPolicy` (`defaultUserRolePermissions.allowedToReadOtherUsers`)
+  - *Logic:* Standard non-admin users should be blocked from accessing the Entra/Azure management portal to prevent directory reconnaissance.
+  - *Compliance:* CIS 1.1.9 (Level 1), SOC 2 CC6.2, CC6.3, NIS2 Art. 21.2.a, GDPR Art. 32.1.b.
 
 ### 5.3 Category 3: Conditional Access & Zero Trust
 - **CHK-CA-01: Blocking Legacy Authentication (POP3/IMAP/SMTP)**
@@ -177,18 +193,35 @@ export interface AuditFinding {
   - *Logic:* Verifies selector presence pointing to `onmicrosoft.com`.
   - *Compliance:* CIS 2.1.3 (Level 2), SOC 2 CC6.6, NIS2 Art. 21.2.e.
 
+- **CHK-EXO-01: External Email Auto-Forwarding Rules**
+  - *Logic:* Verify that remote domains have `AutoForwardEnabled $false` to stop malicious exfiltration of sensitive correspondence.
+  - *Compliance:* CIS 4.1.2 (Level 1), SOC 2 CC6.6, CC6.7, NIS2 Art. 21.2.e, GDPR Art. 32.1.b.
+
 ### 5.5 Category 5: Sharing & Collaboration (SharePoint & Teams)
 - **CHK-SHR-01: Anonymous External Link Sharing**
   - *Endpoint:* `GET /v1.0/admin/sharepoint/settings` (or Graph organization sharing policy endpoint)
   - *Logic:* `sharingCapability` should be `ExistingGuests` or `Disabled`, NOT `ExternalUserAndGuestSharing` (Anonymous "Anyone with the link").
   - *Compliance:* CIS 4.1.1 (Level 1), SOC 2 CC6.3, GDPR Art. 32.1.b, NIS2 Art. 21.2.e.
 
-### 5.6 Category 6: Application Governance (OAuth & Consent)
+- **CHK-SHR-02: Default File Sharing Link Scope (Specific People)**
+  - *Logic:* Verify default link sharing scope is restricted to specific intended recipients (`SpecificPeople`) rather than broad open links.
+  - *Compliance:* CIS 4.1.3 (Level 1), SOC 2 CC6.3, NIS2 Art. 21.2.e, GDPR Art. 32.1.b.
+
+### 5.6 Category 6: Application Governance & Audit Logging
 - **CHK-APP-01: User Consent for Third-Party Applications**
   - *Endpoint:* `GET /v1.0/policies/authorizationPolicy`
   - *Logic:* `defaultUserRolePermissions.allowedToCreateApps` must be `false` and `permissionGrantPolicyDefinitions` must require admin approval for OAuth consent.
   - *Remediation PS:* `Set-MgPolicyAuthorizationPolicy -DefaultUserRolePermissions @{AllowedToCreateApps = $false}`
   - *Compliance:* CIS 5.1.1 (Level 1), SOC 2 CC6.3, NIS2 Art. 21.2.d, GDPR Art. 32.
+
+- **CHK-APP-02: Guest User Invitation Restrictions**
+  - *Endpoint:* `GET /v1.0/policies/authorizationPolicy` (`allowInvitesFrom`)
+  - *Logic:* Only administrators and designated Guest Inviters should be allowed to invite external partners.
+  - *Compliance:* CIS 1.1.7 (Level 1), SOC 2 CC6.3, NIS2 Art. 21.2.a, GDPR Art. 32.1.b.
+
+- **CHK-LOG-01: Unified Audit Logging (UAL) Status**
+  - *Logic:* Validate that centralized audit logging is enabled across all workloads to ensure security forensics and auditability.
+  - *Compliance:* CIS 6.1.1 (Level 1), SOC 2 CC7.2, CC7.3, NIS2 Art. 21.2.b, GDPR Art. 32.1.d.
 
 ---
 
@@ -240,7 +273,7 @@ $$Score = \sum \left( \frac{\text{Earned Weight per Category}}{\text{Total Max W
    - Implement `GraphScanner` and safe API invocation wrappers.
    - Implement `DnsHygieneScanner` using Node's `dns/promises`.
 3. **Phase 3: Assertion Engine & Remediation Generator**
-   - Implement all 13 core audit check rules matching the `AuditFinding` interface.
+   - Implement all 20 core audit check rules matching the `AuditFinding` interface.
    - Provide bilingual localized copy (English & Swedish) for admin center paths, compliance framework references, and PowerShell scripts.
 4. **Phase 4: Diffing & Progress Tracking**
    - Query if a previous report exists for the given `tenantIdHash`.

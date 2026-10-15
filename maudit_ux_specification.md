@@ -169,7 +169,7 @@ The report page is the core deliverable of the platform. It is fully optimized f
   - *Clicking any framework card instantly filters the findings list below.*
 
 #### C. Findings List & Remediation Engine
-Interactive status filter buttons: `All (13)`, `Critical`, `Warnings`, `Passed`, `License Required`.
+Interactive status filter buttons: `All (20)`, `Critical`, `Warnings`, `Passed`, `License Required`.
 
 Every finding is rendered as an expandable accordion card:
 - **Card Header:**

@@ -386,6 +386,223 @@ export const FINDING_LOCALIZATIONS: Record<string, FindingLocalization> = {
       sv: 'Art 32',
     },
   },
+
+  'CHK-ID-04': {
+    title: {
+      en: 'Stale / Inactive User Accounts (90+ Days)',
+      sv: 'Inaktiva användarkonton (90+ dagar utan inloggning)',
+    },
+    description: {
+      en: 'Accounts without recent sign-ins often represent former employees, stale contractors, or unmonitored test accounts. Unused accounts expand the attack surface and represent a primary target for credential stuffing.',
+      sv: 'Konton som inte använts på över 90 dagar representerar ofta tidigare anställda eller kvarglömda testkonton och utgör en onödig attackyta.',
+    },
+    recommendedValue: {
+      en: '0 active user accounts without sign-in for 90+ days',
+      sv: '0 aktiva användarkonton utan inloggning på 90+ dagar',
+    },
+    adminCenterPath: {
+      en: 'Microsoft Entra Admin Center > Users > All users > Add filter "Last sign-in date"',
+      sv: 'Microsoft Entra Admin Center > Användare > Alla användare > Lägg till filter "Senaste inloggning"',
+    },
+    powershellSnippet: {
+      en: '# List active users with no interactive sign-in for 90+ days:\n$Threshold = (Get-Date).AddDays(-90)\nGet-MgUser -Filter "accountEnabled eq true" -Property Id,DisplayName,UserPrincipalName,SignInActivity | Where-Object { $_.SignInActivity.LastSignInDateTime -lt $Threshold }',
+      sv: '# Lista aktiva användare utan inloggning på 90+ dagar:\n$Threshold = (Get-Date).AddDays(-90)\nGet-MgUser -Filter "accountEnabled eq true" -Property Id,DisplayName,UserPrincipalName,SignInActivity | Where-Object { $_.SignInActivity.LastSignInDateTime -lt $Threshold }',
+    },
+    nis2Article: {
+      en: 'Art 21.2.a (Access control & risk policies)',
+      sv: 'Art 21.2.a (Åtkomstbegränsning & riskpolicyer)',
+    },
+    gdprArticle: {
+      en: 'Art 32.1.b (Confidentiality & integrity)',
+      sv: 'Art 32.1.b (Konfidentialitet)',
+    },
+  },
+
+  'CHK-ID-05': {
+    title: {
+      en: 'Modern Password Expiration Policy (NIST Aligned)',
+      sv: 'Modern lösenordsutgångspolicy (NIST/CIS-anpassad)',
+    },
+    description: {
+      en: 'NIST SP 800-63B and CIS guidelines advise against arbitrary periodic password resets (e.g. 60 or 90 days) when strong MFA is enforced, as frequent rotation incentivizes users to choose predictable pattern variations.',
+      sv: 'Enligt NIST och CIS bör lösenord inte tvingas rotera med godtyckliga intervall (t.ex. var 90:e dag) när stark MFA är aktiv, då det driver användare till förutsägbara mönsterbyten.',
+    },
+    recommendedValue: {
+      en: 'Passwords set to never expire (combined with mandatory MFA)',
+      sv: 'Lösenord upphör aldrig (kombinerat med obligatorisk MFA)',
+    },
+    adminCenterPath: {
+      en: 'Microsoft 365 Admin Center > Settings > Org settings > Security & privacy > Password expiration policy',
+      sv: 'Microsoft 365 Admin Center > Inställningar > Organisationsinställningar > Säkerhet och sekretess > Lösenordsutgångspolicy',
+    },
+    powershellSnippet: {
+      en: '# Configure passwords to never expire tenant-wide:\nSet-MgDomain -DomainId "yourdomain.com" -PasswordValidityPeriodInDays $null',
+      sv: '# Ställ in att lösenord inte upphör för organisationen:\nSet-MgDomain -DomainId "yourdomain.com" -PasswordValidityPeriodInDays $null',
+    },
+    nis2Article: {
+      en: 'Art 21.2.e (Cyber hygiene baseline)',
+      sv: 'Art 21.2.e (Grundläggande cybersäkerhetshygien)',
+    },
+    gdprArticle: {
+      en: 'Art 32.1.b (Authentication assurance)',
+      sv: 'Art 32.1.b (Autentiseringssäkerhet)',
+    },
+  },
+
+  'CHK-ADM-04': {
+    title: {
+      en: 'Restrict Non-Admins from Accessing Entra Admin Portals',
+      sv: 'Begränsa standardanvändares åtkomst till Entra Admin Center',
+    },
+    description: {
+      en: 'By default, standard non-privileged users can access the Azure/Entra portal, inspect tenant-wide applications, directory roles, and user memberships. Restricting portal access enforces the principle of least privilege.',
+      sv: 'Som standard kan vanliga slutanvändare logga in i administrationscentret för Entra och läsa katalogdata, roller och företagsappar. Detta bör begränsas.',
+    },
+    recommendedValue: {
+      en: 'Restrict non-administrators from accessing Entra admin center',
+      sv: 'Begränsa icke-administratörers åtkomst till Entra Admin Center',
+    },
+    adminCenterPath: {
+      en: 'Microsoft Entra Admin Center > Users > User settings > Restrict access to Microsoft Entra admin center > Yes',
+      sv: 'Microsoft Entra Admin Center > Användare > Användarinställningar > Begränsa åtkomst till Microsoft Entra admin center > Ja',
+    },
+    powershellSnippet: {
+      en: '# Restrict standard users from accessing Microsoft Entra admin portal:\nUpdate-MgPolicyAuthorizationPolicy -DefaultUserRolePermissions @{AllowedToReadOtherUsers = $false}',
+      sv: '# Begränsa standardanvändares åtkomst till Microsoft Entra admin center:\nUpdate-MgPolicyAuthorizationPolicy -DefaultUserRolePermissions @{AllowedToReadOtherUsers = $false}',
+    },
+    nis2Article: {
+      en: 'Art 21.2.a (Principle of least privilege)',
+      sv: 'Art 21.2.a (Minsta behörighet)',
+    },
+    gdprArticle: {
+      en: 'Art 32.1.b (Prevent unauthorized exposure)',
+      sv: 'Art 32.1.b (Förhindra oavsiktlig exponering)',
+    },
+  },
+
+  'CHK-EXO-01': {
+    title: {
+      en: 'External Email Auto-Forwarding Rules',
+      sv: 'Blockering av automatisk extern vidarebefordran av e-post',
+    },
+    description: {
+      en: 'Threat actors who gain unauthorized access to mailboxes frequently create silent forwarding rules to automatically copy incoming sensitive emails to external Gmail or adversary-controlled domains.',
+      sv: 'Angripare som tar sig in i en inkorg skapar ofta dolda regler för automatisk vidarebefordran för att kontinuerligt kopiera företagsmejl till externa adresser.',
+    },
+    recommendedValue: {
+      en: 'Automatic forwarding disabled for all remote domains (*)',
+      sv: 'Automatisk vidarebefordran inaktiverad för alla externa domäner (*)',
+    },
+    adminCenterPath: {
+      en: 'Exchange Admin Center > Mail flow > Remote domains > Default > Edit > Turn off automatic forwarding',
+      sv: 'Exchange Admin Center > E-postflöde > Fjärrdomäner > Standard > Redigera > Stäng av automatisk vidarebefordran',
+    },
+    powershellSnippet: {
+      en: '# Block automatic email forwarding for remote domains:\nSet-RemoteDomain -Identity Default -AutoForwardEnabled $false',
+      sv: '# Blockera automatisk vidarebefordran mot fjärrdomäner:\nSet-RemoteDomain -Identity Default -AutoForwardEnabled $false',
+    },
+    nis2Article: {
+      en: 'Art 21.2.e (Electronic communication security)',
+      sv: 'Art 21.2.e (Säkerhet i elektronisk kommunikation)',
+    },
+    gdprArticle: {
+      en: 'Art 32.1.b (Data loss prevention)',
+      sv: 'Art 32.1.b (Förhindra dataläckage)',
+    },
+  },
+
+  'CHK-SHR-02': {
+    title: {
+      en: 'Default File Sharing Link Scope (Specific People)',
+      sv: 'Standardtyp för delningslänkar (Specifika personer)',
+    },
+    description: {
+      en: 'Setting the default sharing link type in SharePoint and OneDrive to "Specific People" ensures files are shared with intended recipients only, rather than accidentally granting access to the entire organization or external parties.',
+      sv: 'Genom att sätta standardtypen för delningslänkar i SharePoint och OneDrive till "Specifika personer" undviks oavsiktlig vid delning till hela organisationen.',
+    },
+    recommendedValue: {
+      en: 'Default link type set to "SpecificPeople"',
+      sv: 'Standardlänktyp inställd på "SpecificPeople" (Specifika personer)',
+    },
+    adminCenterPath: {
+      en: 'SharePoint Admin Center > Policies > Sharing > File and folder links > Choose "Specific people"',
+      sv: 'SharePoint Admin Center > Principer > Delning > Fil- och mapplänkar > Välj "Specifika personer"',
+    },
+    powershellSnippet: {
+      en: '# Set default sharing link type to Specific People:\nSet-SPOTenant -DefaultSharingLinkType Internal',
+      sv: '# Sätt standardlänktyp för delning i SharePoint:\nSet-SPOTenant -DefaultSharingLinkType Internal',
+    },
+    nis2Article: {
+      en: 'Art 21.2.e (System & network security)',
+      sv: 'Art 21.2.e',
+    },
+    gdprArticle: {
+      en: 'Art 32.1.b (Prevent accidental disclosure)',
+      sv: 'Art 32.1.b (Skydd mot oavsiktlig exponering)',
+    },
+  },
+
+  'CHK-APP-02': {
+    title: {
+      en: 'Guest User Invitation Restrictions',
+      sv: 'Begränsa behörighet att bjuda in externa gäster',
+    },
+    description: {
+      en: 'Allowing all users and external guests to invite additional guest accounts into the tenant leads to shadow access and unmonitored identities. Guest invitations should be restricted to administrators and designated inviters.',
+      sv: 'Att tillåta alla anställda och befintliga gäster att bjuda in nya externa gästkonton skapar skuggidentiteter. Inbjudningar bör begränsas till administratörer.',
+    },
+    recommendedValue: {
+      en: 'Only administrators and designated Guest Inviters can invite',
+      sv: 'Endast administratörer och utsedda gästinbjudare kan bjuda in',
+    },
+    adminCenterPath: {
+      en: 'Microsoft Entra Admin Center > External Identities > External collaboration settings > Guest invite settings',
+      sv: 'Microsoft Entra Admin Center > Externa identiteter > Externa samarbetsinställningar > Inställningar för gästinbjudan',
+    },
+    powershellSnippet: {
+      en: '# Restrict guest invitations to admins and designated roles:\nUpdate-MgPolicyAuthorizationPolicy -AllowInvitesFrom "adminsAndGuestInviters"',
+      sv: '# Begränsa gästinbjudningar till administratörer och gästinbjudarroller:\nUpdate-MgPolicyAuthorizationPolicy -AllowInvitesFrom "adminsAndGuestInviters"',
+    },
+    nis2Article: {
+      en: 'Art 21.2.a (Access control)',
+      sv: 'Art 21.2.a (Åtkomstkontroll)',
+    },
+    gdprArticle: {
+      en: 'Art 32.1.b (Confidentiality)',
+      sv: 'Art 32.1.b',
+    },
+  },
+
+  'CHK-LOG-01': {
+    title: {
+      en: 'Unified Audit Logging (UAL) Status',
+      sv: 'Centraliserad granskningsloggning (Unified Audit Log)',
+    },
+    description: {
+      en: 'The Unified Audit Log records administrative and user actions across Microsoft 365 services (Entra ID, SharePoint, Exchange, OneDrive, and Teams). Without active audit logging, post-incident forensics and security investigations are impossible.',
+      sv: 'Unified Audit Log loggar händelser i Microsoft 365. Om granskningsloggning är inaktiverad kan incidenter inte utredas eller spåras i efterhand.',
+    },
+    recommendedValue: {
+      en: 'Enabled across all Microsoft 365 workloads',
+      sv: 'Aktiverat för samtliga Microsoft 365-arbetsbelastningar',
+    },
+    adminCenterPath: {
+      en: 'Microsoft Defender XDR / Purview > Audit > Turn on auditing',
+      sv: 'Microsoft Defender XDR / Purview > Granskning > Aktivera granskning',
+    },
+    powershellSnippet: {
+      en: '# Verify and enable Unified Audit Log via Exchange Online PowerShell:\nSet-AdminAuditLogConfig -UnifiedAuditLogIngestionEnabled $true',
+      sv: '# Aktivera Unified Audit Log via PowerShell:\nSet-AdminAuditLogConfig -UnifiedAuditLogIngestionEnabled $true',
+    },
+    nis2Article: {
+      en: 'Art 21.2.b (Incident handling & logging)',
+      sv: 'Art 21.2.b (Hantering av incidenter och loggning)',
+    },
+    gdprArticle: {
+      en: 'Art 32.1.d (Effectiveness testing & auditability)',
+      sv: 'Art 32.1.d (Granskningsbarhet & loggning)',
+    },
+  },
 };
 
 export function translateCurrentValue(finding: AuditFinding, lang: 'en' | 'sv'): string {
@@ -542,7 +759,52 @@ export function translateCurrentValue(finding: AuditFinding, lang: 'en' | 'sv'):
     return 'DKIM CNAME lookup failed in DNS';
   }
 
-  // 10. General fallback replacement for residual Swedish words
+  // 10. Additional 7 checks (Inactive accounts, password expiration, admin portal, auto-forward, sharing links, guest invites, audit logging)
+  if (val.includes('Inga inaktiva konton äldre än 90 dagar identifierade')) {
+    return 'No inactive accounts older than 90 days identified';
+  }
+  const inactiveMatch = val.match(/^(\d+)\s*inaktiva\s*konton\s*utan\s*inloggning\s*på\s*90\+\s*dagar/i);
+  if (inactiveMatch) {
+    return `${inactiveMatch[1]} inactive accounts without sign-in for 90+ days`;
+  }
+  if (val.includes('Lösenord upphör aldrig att gälla')) {
+    return 'Passwords never expire (NIST/CIS aligned with enforced MFA)';
+  }
+  if (val.includes('Lösenordsutgång aktiverad')) {
+    return 'Password expiration active (forced periodic rotation)';
+  }
+  if (val.includes('Begränsad (Standardanvändare kan inte nå Entra Admin Center)')) {
+    return 'Restricted (Standard users blocked from accessing Entra admin center)';
+  }
+  if (val.includes('Tillåten (Standardanvändare kan granska hela katalogen)')) {
+    return 'Permitted (Standard users can browse entire tenant directory)';
+  }
+  if (val.includes('Blockerad för alla externa domäner (*)')) {
+    return 'Blocked for all remote domains (*)';
+  }
+  if (val.includes('Tillåten (Risk för automatisk vidarebefordran av e-post)')) {
+    return 'Permitted (Risk of automatic email exfiltration)';
+  }
+  if (val.includes('SpecificPeople (Endast angivna personer)')) {
+    return 'SpecificPeople (Only designated individuals receive access)';
+  }
+  if (val.includes('Organization / AnyoneWithLink')) {
+    return 'Organization / AnyoneWithLink (Broad sharing scope)';
+  }
+  if (val.includes('Endast administratörer och inbjudare')) {
+    return 'Only administrators and designated guest inviters';
+  }
+  if (val.includes('Alla användare och gäster kan bjuda in')) {
+    return 'All users and existing guests can invite external accounts';
+  }
+  if (val.includes('Aktiverat (Unified Audit Log samlar in händelser)')) {
+    return 'Enabled (Unified Audit Log captures tenant events)';
+  }
+  if (val.includes('Inaktiverat (Ingen central granskningsloggning)')) {
+    return 'Disabled (Unified Audit Log is turned off)';
+  }
+
+  // 11. General fallback replacement for residual Swedish words
   return val
     .replace(/(\d+)\s*av\s*(\d+)/gi, '$1 of $2')
     .replace(/\banvändare\b/gi, 'users')

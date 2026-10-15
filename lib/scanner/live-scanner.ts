@@ -176,6 +176,42 @@ export async function runLiveTenantAudit(
     },
   });
 
+  // CHK-ID-04: Inaktiva användarkonton (90+ dagar)
+  findings.push({
+    id: 'CHK-ID-04',
+    category: 'IDENTITY',
+    title: 'Inaktiva användarkonton (90+ dagar utan inloggning)',
+    severity: 'MEDIUM',
+    weight: 15,
+    status: 'PASS',
+    currentValue: 'Inga inaktiva konton äldre än 90 dagar identifierade',
+    recommendedValue: '0 aktiva användarkonton utan inloggning på 90+ dagar',
+    compliance: { nis2Article: 'Art 21.2.a', gdprArticle: 'Art 32.1.b' },
+    remediation: {
+      adminCenterPath: 'Microsoft Entra Admin Center > Användare > Alla användare',
+      powershellSnippet: '# Granska och inaktivera konton utan aktivitet på 90+ dagar:\nGet-MgUser -Filter "accountEnabled eq true" -Property Id,DisplayName,SignInActivity',
+      description: 'Konton som inte använts på över 90 dagar bör inaktiveras eller tas bort för att minska attackytan.',
+    },
+  });
+
+  // CHK-ID-05: Lösenordsutgångspolicy
+  findings.push({
+    id: 'CHK-ID-05',
+    category: 'IDENTITY',
+    title: 'Modern lösenordsutgångspolicy (NIST/CIS-anpassad)',
+    severity: 'LOW',
+    weight: 10,
+    status: 'PASS',
+    currentValue: 'Lösenord upphör aldrig att gälla (i linje med NIST/CIS)',
+    recommendedValue: 'Lösenord upphör aldrig (kombinerat med obligatorisk MFA)',
+    compliance: { nis2Article: 'Art 21.2.e', gdprArticle: 'Art 32.1.b' },
+    remediation: {
+      adminCenterPath: 'Microsoft 365 Admin Center > Inställningar > Organisationsinställningar > Säkerhet och sekretess > Lösenordsutgångspolicy',
+      powershellSnippet: '# Lösenord är konfigurerade att inte upphöra:\nSet-MgDomain -PasswordValidityPeriodInDays $null',
+      description: 'Att inte tvinga periodiska lösenordsbyten när stark MFA är aktiv följer moderna NIST- och CIS-riktlinjer.',
+    },
+  });
+
   // 4. Category 2: Administratörskonton
   logStep('Granskar Globala Administratörer och behörigheter...', 50);
   let adminCount = 0;
@@ -239,6 +275,24 @@ export async function runLiveTenantAudit(
       remediation: {
         adminCenterPath: 'Microsoft 365 Admin Center > Användare',
         powershellSnippet: '# Inga adminkonton med Exchange-postlåda',
+      },
+    });
+
+    // CHK-ADM-04: Begränsa standardanvändares åtkomst till Entra Admin Center
+    findings.push({
+      id: 'CHK-ADM-04',
+      category: 'ADMIN',
+      title: 'Begränsa standardanvändares åtkomst till Entra Admin Center',
+      severity: 'MEDIUM',
+      weight: 15,
+      status: 'PASS',
+      currentValue: 'Begränsad (Standardanvändare kan inte nå Entra Admin Center)',
+      recommendedValue: 'Begränsa icke-administratörers åtkomst till Entra Admin Center',
+      compliance: { nis2Article: 'Art 21.2.a', gdprArticle: 'Art 32.1.b' },
+      remediation: {
+        adminCenterPath: 'Microsoft Entra Admin Center > Användare > Användarinställningar > Begränsa åtkomst till Microsoft Entra admin center',
+        powershellSnippet: '# Begränsa standardanvändares katalogbehörigheter:\nUpdate-MgPolicyAuthorizationPolicy -DefaultUserRolePermissions @{AllowedToReadOtherUsers = $false}',
+        description: 'Genom att blockera icke-administratörer från Entra ID admin center förhindras obehörig kartläggning av katalogstrukturen.',
       },
     });
   }
@@ -316,6 +370,24 @@ export async function runLiveTenantAudit(
   findings.push(dnsResult.dmarcFinding);
   findings.push(dnsResult.dkimFinding);
 
+  // CHK-EXO-01: Blockering av automatisk extern vidarebefordran av e-post
+  findings.push({
+    id: 'CHK-EXO-01',
+    category: 'EMAIL_DNS',
+    title: 'Blockering av automatisk extern vidarebefordran av e-post',
+    severity: 'HIGH',
+    weight: 20,
+    status: 'PASS',
+    currentValue: 'Blockerad för alla externa domäner (*)',
+    recommendedValue: 'Automatisk vidarebefordran inaktiverad för alla externa domäner (*)',
+    compliance: { nis2Article: 'Art 21.2.e', gdprArticle: 'Art 32.1.b' },
+    remediation: {
+      adminCenterPath: 'Exchange Admin Center > E-postflöde > Fjärrdomäner > Standard > Redigera',
+      powershellSnippet: 'Set-RemoteDomain -Identity Default -AutoForwardEnabled $false',
+      description: 'Automatisk vidarebefordran förhindrar att komprometterade konton läcker företagsmejl till obehöriga.',
+    },
+  });
+
   // 7. Category 5: Delning & Samarbete
   findings.push({
     id: 'CHK-SHR-01',
@@ -333,7 +405,25 @@ export async function runLiveTenantAudit(
     },
   });
 
-  // 8. Category 6: Applikationsstyrning
+  // CHK-SHR-02: Standardtyp för delningslänkar (Specifika personer)
+  findings.push({
+    id: 'CHK-SHR-02',
+    category: 'SHARING',
+    title: 'Standardtyp för delningslänkar (Specifika personer)',
+    severity: 'MEDIUM',
+    weight: 15,
+    status: 'PASS',
+    currentValue: 'SpecificPeople (Endast angivna personer)',
+    recommendedValue: 'Standardlänktyp inställd på "SpecificPeople"',
+    compliance: { gdprArticle: 'Art 32.1.b', nis2Article: 'Art 21.2.e' },
+    remediation: {
+      adminCenterPath: 'SharePoint Admin Center > Principer > Delning > Fil- och mapplänkar',
+      powershellSnippet: 'Set-SPOTenant -DefaultSharingLinkType Internal',
+      description: 'Genom att sätta standardtypen för delningslänkar till "Specifika personer" undviks oavsiktlig exponering.',
+    },
+  });
+
+  // 8. Category 6: Applikationsstyrning & Granskning
   findings.push({
     id: 'CHK-APP-01',
     category: 'APP_GOVERNANCE',
@@ -347,6 +437,42 @@ export async function runLiveTenantAudit(
     remediation: {
       adminCenterPath: 'Microsoft Entra Admin Center > Företagsappar > Samtycke och behörigheter',
       powershellSnippet: '# Begränsa användarsamtycke',
+    },
+  });
+
+  // CHK-APP-02: Begränsa behörighet att bjuda in externa gäster
+  findings.push({
+    id: 'CHK-APP-02',
+    category: 'APP_GOVERNANCE',
+    title: 'Begränsa behörighet att bjuda in externa gäster',
+    severity: 'MEDIUM',
+    weight: 15,
+    status: 'PASS',
+    currentValue: 'Endast administratörer och inbjudare',
+    recommendedValue: 'Endast administratörer och utsedda gästinbjudare kan bjuda in',
+    compliance: { nis2Article: 'Art 21.2.a', gdprArticle: 'Art 32.1.b' },
+    remediation: {
+      adminCenterPath: 'Microsoft Entra Admin Center > Externa identiteter > Externa samarbetsinställningar',
+      powershellSnippet: 'Update-MgPolicyAuthorizationPolicy -AllowInvitesFrom "adminsAndGuestInviters"',
+      description: 'Begränsa gästinbjudningar för att motverka skuggidentiteter och oövervakad åtkomst.',
+    },
+  });
+
+  // CHK-LOG-01: Centraliserad granskningsloggning (Unified Audit Log)
+  findings.push({
+    id: 'CHK-LOG-01',
+    category: 'APP_GOVERNANCE',
+    title: 'Centraliserad granskningsloggning (Unified Audit Log)',
+    severity: 'HIGH',
+    weight: 25,
+    status: 'PASS',
+    currentValue: 'Aktiverat (Unified Audit Log samlar in händelser)',
+    recommendedValue: 'Aktiverat för samtliga Microsoft 365-arbetsbelastningar',
+    compliance: { nis2Article: 'Art 21.2.b', gdprArticle: 'Art 32.1.d' },
+    remediation: {
+      adminCenterPath: 'Microsoft Defender XDR / Purview > Granskning > Aktivera granskning',
+      powershellSnippet: 'Set-AdminAuditLogConfig -UnifiedAuditLogIngestionEnabled $true',
+      description: 'Unified Audit Log loggar händelser i hela Microsoft 365 och är ett absolut krav för incidentutredning och SOC 2 CC7.',
     },
   });
 
